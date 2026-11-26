@@ -509,6 +509,59 @@ describe('gatherLiveContext', () => {
     expect(live.spoken).not.toContain('{');
   });
 
+  it('prefers the fullest same-story body, not whichever snippet arrives first', async () => {
+    // Owner 2026-11-26 (third report): "the news still too short".
+    const googleRss = '<rss><channel><item><title>SpaceX wins approval for orbital data centre - Wire</title></item></channel></rss>';
+    const bingRss = `<rss><channel>
+      <item><title>SpaceX wins approval for orbital data centre - Daily A</title>
+        <description>SpaceX wins approval for a small orbital data centre trial.</description></item>
+      <item><title>SpaceX wins approval for orbital data centre plan - Daily B</title>
+        <description>Regulators approved SpaceX plans for up to a million computing satellites. The first satellite must launch before 2033. The full network is due by 2040.</description></item>
+    </channel></rss>`;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('bing.com/news/search')) return new Response(bingRss, { status: 200 });
+      if (url.includes('news.google.com')) return new Response(googleRss, { status: 200 });
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('news near me', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => HK,
+    });
+    // The longer outlet's body wins even though the short one was listed first.
+    expect(live.spoken).toContain('million computing satellites');
+    expect(live.spoken).toContain('due by 2040');
+  });
+
+  it('reads two outlets when no single snippet carries a full body', async () => {
+    const googleRss = '<rss><channel><item><title>SpaceX wins approval for orbital data centre - Wire</title></item></channel></rss>';
+    const bingRss = `<rss><channel>
+      <item><title>SpaceX wins approval for orbital data centre - Daily A</title>
+        <description>US regulators approved SpaceX orbital data centre plans on Tuesday.</description></item>
+      <item><title>SpaceX wins approval for orbital data centre - Daily B</title>
+        <description>The network would place a million satellites in low orbit by 2040.</description></item>
+    </channel></rss>`;
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('bing.com/news/search')) return new Response(bingRss, { status: 200 });
+      if (url.includes('news.google.com')) return new Response(googleRss, { status: 200 });
+      return jsonRes({}, 404);
+    };
+    const live = await gatherLiveContext('news near me', {
+      lang: 'en',
+      fetch: fetchImpl,
+      cache: new Map(),
+      locate: async () => HK,
+    });
+    // Headline + both outlets' sentences = a story, not a headline + one line.
+    expect(live.spoken).toContain('approved SpaceX orbital data centre plans');
+    expect(live.spoken).toContain('million satellites in low orbit');
+    const sentences = live.spoken.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 3);
+    expect(sentences.length).toBeGreaterThanOrEqual(3);
+  });
+
   it('reads Yahoo portal RSS when Google and rss2json are blocked', async () => {
     let located = false;
     const yahooRss = '<rss><channel><item><title>A cat wins a funny contest in town - Yahoo</title></item><item><title>A shooting kills several people downtown</title></item></channel></rss>';
@@ -940,16 +993,24 @@ describe('local light news and reply guard', () => {
     expect(newsLocalPlaceLabel('en', 'Hong Kong')).toBe('Hong Kong');
   });
 
-  it('newsTellNeedsEnrichment requires minimum body length beyond headline', () => {
+  it('newsTellNeedsEnrichment requires several real body sentences beyond the headline', () => {
     const rich = {
       title: '社區花市週末開張',
       source: 'HK01',
-      summary: '主辦方表示今個周末會有超過八十個攤位，售賣本地鮮花同手作。第一日會安排爵士樂隊表演，亦會有免費插花工作坊俾市民參加。',
+      summary: '主辦方表示今個周末會有超過八十個攤位，售賣本地鮮花同手作。第一日會安排爵士樂隊表演，亦會有免費插花工作坊俾市民參加。場地每日朝十晚八開放，入口設於維園正門，長者同小童免費入場。大會預計今年入場人次會比去年增加兩成。',
     };
     expect(newsTellNeedsEnrichment(rich, 'yue')).toBe(false);
+    // Two sentences of ~30 chars each passed the old 56-char bar, so the
+    // enrichment branch never fired and the tell stayed a headline + a line.
+    const twoSentences = {
+      title: '社區花市週末開張',
+      source: 'HK01',
+      summary: '主辦方表示今個周末會有超過八十個攤位。第一日會安排爵士樂隊表演。',
+    };
+    expect(newsTellNeedsEnrichment(twoSentences, 'yue')).toBe(true);
     const thin = { title: '社區花市週末開張', source: 'HK01', summary: '週末見。' };
     expect(newsTellNeedsEnrichment(thin, 'yue')).toBe(true);
-    expect(NEWS_SPOKEN_MIN_BODY_CHARS).toBeGreaterThan(40);
+    expect(NEWS_SPOKEN_MIN_BODY_CHARS).toBeGreaterThanOrEqual(90);
   });
 
   it('newsSpokenBodyBeats drops author/read-more chrome and keeps CJK detail', () => {
