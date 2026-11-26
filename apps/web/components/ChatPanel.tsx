@@ -853,6 +853,11 @@ export default function ChatPanel({
     // Dance / sing / music session: a pending poke continuation must not
     // start talking over the show when the queue drains.
     cancelPokeResume();
+    // Retire any bed still on stage BEFORE the intro line. Since owner
+    // 2026-11-26 ("don't talk while singing or music time") speak() is silent
+    // while a bed is audible, so an old song left playing would swallow the
+    // announcement of the new one.
+    endPerformanceMusic();
     const query = {
       kind,
       characterId,
@@ -971,10 +976,12 @@ export default function ChatPanel({
     if (firstLive && alreadySpoken) {
       if (mv === 'dance' && !isListenOnlyPerformance()) {
         // Dance body starts on library-clip playing (beginShow), not here.
-        beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
-          const rest = speechRemainder(reply, alreadySpoken.text);
-          if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
-        });
+        // The rest of THIS turn is spoken before the bed, never over it
+        // (owner 2026-11-26: "don't talk while singing or music time").
+        // beginShow's whenSpeechIdle holds the bed until speech is idle.
+        beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
+        const rest = speechRemainder(reply, alreadySpoken.text);
+        if (rest) speak(rest, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
       } else if (mv) triggerMove(mv);
       notifySpeaking(reply);
       if (mv !== 'dance') {
@@ -992,10 +999,11 @@ export default function ChatPanel({
       return '';
     }
     if (mv === 'dance' && !isListenOnlyPerformance()) {
-      beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText), () => {
-        speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
-      });
+      // Announce first, bed second: beginShow's whenSpeechIdle holds the music
+      // until this line is done, so she never talks over her own dance bed.
+      beginShow('dance', 9300, mood, laughCountRef.current, false, detectMusicStyle(userText));
       notifySpeaking(reply);
+      speak(reply, characterId, lang, contentHints, undefined, intensity, storyRate, withUtterance({ resumable: true }, utterance));
       return reply;
     }
     // r86 — the piano performance finally SOUNDS like a piano: the theme's

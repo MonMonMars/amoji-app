@@ -153,7 +153,7 @@ import { emotionIntensityScale, emotionProsody } from './emotion-prosody';
 import { SONG_MELODY } from './songs';
 import { endLipSync, finishLipSync, holdLipSync, noteSpeechStarted, notifySpeaking } from './speech';
 import { clearSpeechCaption, dispatchSpeechCaption, rollCaptionsForLine } from './speech-caption';
-import { duckLibraryBed, endPerformanceMusic } from './music';
+import { duckLibraryBed, endPerformanceMusic, isLibraryClipAudible } from './music';
 import { clearMove, clearPerfMotionProfile, setThinkingPose } from './companion';
 import { companionPlaybackSession, duckExternalAudioForCompanion } from './voice-chat-focus';
 
@@ -1776,6 +1776,23 @@ export function speak(
   // only the user's mic or a user turn calls it.
   const cleaned = stripLaughTokens(cleanForSpeech(text));
   if (!cleaned || !voiceOutputAllowed()) return;
+  // Owner 2026-11-26: "please don't talk while singing or music time" then
+  // "stop the music or song if need to talk." Two rules, both here:
+  //   · a line that must be heard (resumable = real conversation) MAKES ROOM by
+  //     ending the bed first, so words are never layered on her own song;
+  //   · everything else (fillers, idle chatter, replay taps) is dropped rather
+  //     than interrupting the music.
+  // Any real user turn already ends the bed via stopSpeakingForInterrupt(), and
+  // a reply that starts a show is spoken BEFORE the bed (whenSpeechIdle holds
+  // it), so normal conversation is never swallowed by this gate.
+  if (isLibraryClipAudible()) {
+    if (!opts?.resumable) {
+      // Deliberate silence, NOT a failure: never report a voice status here, or
+      // a mute/failure plate would appear during every song.
+      return;
+    }
+    endPerformanceMusic();
+  }
   // Owner 2026-11-23: "now the character always repeat the answers two times."
   // speak() is the single choke point for every audible line, and it had no
   // idempotence: the tap-to-replay path (armed by the 8s no-audio watchdog or
@@ -2831,6 +2848,14 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
     // phrase. Do not remove one half of this pair: no snapshot = silent loss;
     // no arm = captured line thrown away. Reactions/greets/previews/fillers are
     // not tagged resumable, so poking THEM stays a hard cut.
+    // Owner 2026-11-26: "stop the music or song if need to talk."
+    // A poke IS a need to talk, so the show yields instead of swallowing her
+    // reaction: end the bed first (which also ends the performance session), so
+    // the impact clip and the reaction line are never layered over her song.
+    // This must run BEFORE capturePokeResume() — endPerformanceMusic dispatches
+    // the bed `stopped` event, whose handler clears the move, and we still want
+    // the pre-existing conversation captured and resumed after the reaction.
+    if (isLibraryClipAudible()) endPerformanceMusic();
     const resumable = capturePokeResume() ?? pokeResume.pending();
     interruptSpeechForPoke();
     if (sfxEnabled() && !isMasterMuted()) {
@@ -2850,6 +2875,9 @@ export function playPokeBurst(characterId: string, lang: Lang, zone?: string, po
     // The spoken reaction goes AFTER the clip: impact first, words after.
     const line = pokeBurstSpokenLine(characterId, lang, z, pokeN);
     speak(line, characterId, lang, { surprise: 0.62 }, undefined, 1.05);
+    // Earliest resume is POKE_REACTION_MS AND the reaction line must be done;
+    // a second poke replaces this one instead of stacking a second resume.
+    if (resumable) pokeResume.arm(resumable);
     // Earliest resume is POKE_REACTION_MS AND the reaction line must be done;
     // a second poke replaces this one instead of stacking a second resume.
     if (resumable) pokeResume.arm(resumable);
