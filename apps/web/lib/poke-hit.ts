@@ -425,18 +425,34 @@ interface Gains {
   armUpBias: number;
 }
 
-function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
+/**
+ * Body recipe for one poked band.
+ *
+ * FRONT/BACK ARE MIRRORS (owner 2026-11-26: "the front and back should mirror
+ * the poke move"). The character's own frame decides everything here:
+ * forward is +Z, up is +Y, her lateral plane is XY. A back poke is the SAME
+ * physical hit as the front poke on the same band, seen from the other side, so
+ * it must use the SAME recipe — gains, spring shape and arm flinch included.
+ * The only thing that may differ is the SIGN of the axial fall, and that is
+ * decided once, for every axial zone, in `axialRecoilFall()`.
+ *
+ * This function used to carry separate `fromBack` rows (chest: spine 0.64 vs
+ * 0.6, chest 0.34 vs 0.68, arm 0.34 vs 0.42 …) and a whole `case 'back'` row
+ * with a different spring kind, so a back poke was neither the same magnitude
+ * nor the same shape as its front mirror. Direction now only selects the
+ * LATERAL recipe (`side`), never an axial one.
+ */
+function gainsFor(hitZone: TalkZone, direction: PokeDirection): Gains {
   const side = isLateralPokeDirection(direction);
-  const fromBack = isBackPokeDirection(direction);
+  // `back` is the rear twin of `chest` (poke-zones tierLegacyZone maps the rear
+  // shoulder/chest tier to it). Same band, same recipe, mirrored by the sign.
+  const zone: TalkZone = hitZone === 'back' ? 'chest' : hitZone;
   switch (zone) {
     case 'head':
       return { spine: 0, chest: 0, head: 0.95, hip: 0, hipRoll: 0, roll: 0, yaw: 0, arm: 0, elbow: 0, armUp: 0, shift: 0, kind: 'head', elbowBias: 0, armUpBias: 0 };
     case 'chest':
       if (side) {
         return { spine: 0.44, chest: 0.55, head: 0.22, hip: 0.32, hipRoll: 0.4, roll: 0.62, yaw: 0.07, arm: 0.78, elbow: 0.42, armUp: 0.22, shift: 0.04, kind: 'chest', elbowBias: 0.1, armUpBias: -0.05 };
-      }
-      if (fromBack) {
-        return { spine: 0.64, chest: 0.34, head: 0.18, hip: 0.36, hipRoll: 0.08, roll: 0.1, yaw: 0.03, arm: 0.34, elbow: 0.22, armUp: 0.2, shift: 0.036, kind: 'chest', elbowBias: 0.04, armUpBias: 0.08 };
       }
       return { spine: 0.6, chest: 0.68, head: 0.2, hip: 0.38, hipRoll: 0.08, roll: 0.12, yaw: 0.03, arm: 0.42, elbow: 0.3, armUp: 0.1, shift: 0.04, kind: 'chest', elbowBias: 0.12, armUpBias: 0 };
     case 'belly':
@@ -460,14 +476,9 @@ function gainsFor(zone: TalkZone, direction: PokeDirection): Gains {
     case 'side':
       // Stronger lateral lean + near-arm flinch so same-side tip reads on phone.
       return { spine: 0.42, chest: 0.38, head: 0.22, hip: 0.4, hipRoll: 0.48, roll: 0.68, yaw: 0.08, arm: 0.98, elbow: 0.55, armUp: 0.32, shift: 0.048, kind: 'body', elbowBias: 0.1, armUpBias: 0.08 };
-    case 'back':
-      return { spine: 0.72, chest: 0.4, head: 0.16, hip: 0.42, hipRoll: 0.08, roll: 0.1, yaw: 0.03, arm: 0.38, elbow: 0.24, armUp: 0.18, shift: 0.042, kind: 'body', elbowBias: 0.03, armUpBias: 0.09 };
     default: {
       if (side) {
         return { spine: 0.38, chest: 0.28, head: 0.14, hip: 0.36, hipRoll: 0.32, roll: 0.4, yaw: 0.06, arm: 0.62, elbow: 0.36, armUp: 0.16, shift: 0.04, kind: 'body', elbowBias: 0.1, armUpBias: 0.04 };
-      }
-      if (fromBack) {
-        return { spine: 0.76, chest: 0.4, head: 0.16, hip: 0.46, hipRoll: 0.06, roll: 0.08, yaw: 0.03, arm: 0.4, elbow: 0.26, armUp: 0.16, shift: 0.046, kind: 'heavy', elbowBias: 0.02, armUpBias: 0.08 };
       }
       return { spine: 0.8, chest: 0.5, head: 0.22, hip: 0.48, hipRoll: 0.08, roll: 0.12, yaw: 0.035, arm: 0.6, elbow: 0.38, armUp: 0.12, shift: 0.05, kind: 'body', elbowBias: 0.12, armUpBias: 0.02 };
     }

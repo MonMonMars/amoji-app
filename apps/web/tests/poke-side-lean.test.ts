@@ -257,7 +257,7 @@ describe('lateral lean follows the finger side', () => {
   });
 });
 
-describe('front/back stays exactly at r290', () => {
+describe('front/back axial numbers: front pinned, back is its exact mirror', () => {
   it('centre front/back axial numbers are unchanged', () => {
     // The same expectations as poke-hit.test.ts — duplicated so a lateral
     // change that touches the axial path fails here too.
@@ -272,8 +272,10 @@ describe('front/back stays exactly at r290', () => {
     expect(front.spinePitch).toBeCloseTo(0.6527, 3);
     expect(front.headX).toBeCloseTo(0.1795, 3);
     expect(front.hipPitch).toBeCloseTo(0.3916, 3);
-    expect(back.spinePitch).toBeCloseTo(-0.6500, 3);
-    expect(back.headX).toBeCloseTo(-0.1369, 3);
+    // Owner 2026-11-26: the back lean is the front lean negated (was −0.6500 /
+    // −0.1369 — a separately-tuned, quieter back recipe, i.e. not a mirror).
+    expect(back.spinePitch).toBeCloseTo(-front.spinePitch, 12);
+    expect(back.headX).toBeCloseTo(-front.headX, 12);
   });
 
   it('the finger-side anchor is a no-op on a centred front/back fall', () => {

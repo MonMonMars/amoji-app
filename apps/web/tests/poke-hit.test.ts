@@ -151,10 +151,13 @@ describe('pokeBodyReaction', () => {
     expect(front.spinePitch).toBeCloseTo(0.6527, 3);
     expect(front.headX).toBeCloseTo(0.1795, 3);
     expect(front.hipPitch).toBeCloseTo(0.3916, 3);
-    expect(back.spinePitch).toBeCloseTo(-0.6500, 3);
-    expect(back.headX).toBeCloseTo(-0.1369, 3);
-    // Straight swap on the Z axis: same magnitude, opposite sign.
-    expect(front.spinePitch + back.spinePitch).toBeCloseTo(0, 2);
+    // Owner 2026-11-26 ("the front and back should mirror the poke move"):
+    // the back lean is the front lean negated, not a second, quieter recipe.
+    // These used to be −0.6500 / −0.1369 — close enough to pass a 2-decimal sum
+    // while the two leans still differed by 20% in magnitude and in spring shape.
+    expect(back.spinePitch).toBeCloseTo(-front.spinePitch, 12);
+    expect(back.headX).toBeCloseTo(-front.headX, 12);
+    expect(back.hipPitch).toBeCloseTo(-front.hipPitch, 12);
   });
 
   it('leans the chest toward a side impulse without moving the root', () => {
