@@ -27,6 +27,7 @@ import {
   ndcPointInElementLocal,
   pokeArmSideFromScreenPush,
   armZoneFromScreen,
+  axialRecoilFall,
   POKE_REACTION_MS,
   type PokeDirection,
   type TalkZone,
@@ -1861,8 +1862,8 @@ export default function CompanionCanvas({
             }
             // Owner report 2026-11-22 (second time): a side poke must never
             // blend to the opposite side. Anchor the LATERAL component to the
-            // finger's screen side; the camera-forward (front/back) component
-            // is untouched, so the owner-confirmed r290 axial lean cannot move.
+            // finger's screen side. This only touches X; the axial (Z) sign is
+            // decided once, below, by axialRecoilFall().
             {
               const fingerFall = flipPokeFallToFingerSide(pokeFallDir, camRightXZ, leanSide);
               pokeFallDir.set(fingerFall.x, 0, fingerFall.z);
@@ -2060,12 +2061,24 @@ export default function CompanionCanvas({
         let skLArm = 0, skRArm = 0, skLElb = 0, skRElb = 0, skLUp = 0, skRUp = 0;
         let skHip = 0, skHipRoll = 0, skHipX = 0, skHipZ = 0;
         if (boost > 0) {
+          // Front/back lean sign — THE single decision (lib/poke-hit.ts header).
+          // pokeFallDir is the punch TRAVEL vector (a front hit travels −Z), and
+          // pokeBodyReaction leans along −fallZ, so hand it the mirrored Z to
+          // make her recoil AWAY from the punch: front poke → leans back, away
+          // from the camera; back poke → leans forward, toward the camera.
+          // `pokeSection` above was resolved from the raw travel vector, so the
+          // front/back LABEL and voice slot are untouched. Lateral (X) is
+          // untouched too; `side` is returned verbatim by the helper.
+          const bodyFall = axialRecoilFall(
+            { x: pokeFallDir.x, z: pokeFallDir.z },
+            pokeZone,
+          );
           const hit = pokeSectionBodyReaction({
             t: 1 - boost,
             section: pokeSection,
             hitZone: pokeZone,
-            fallX: pokeFallDir.x,
-            fallZ: pokeFallDir.z,
+            fallX: bodyFall.x,
+            fallZ: bodyFall.z,
             sideSign: pokeSideSign,
             softChest: pokeZone === 'chest' && gender === 'female',
             twist: TWIST_AMOUNT[poke.twist] ?? 0.05,

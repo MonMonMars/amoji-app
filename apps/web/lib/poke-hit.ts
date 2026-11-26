@@ -2,6 +2,68 @@
 // The body recoils away from the poke (the punch continues through the
 // contact). Each major part has its own impact shape; eight directions
 // (front, diagonals, sides, back) change which joints take the force.
+//
+// ===========================================================================
+// POKE SPACE CONVENTION — AUTHORITATIVE. Read this before changing ANY sign.
+// ===========================================================================
+// This file has had its front/back lean flipped back and forth by successive
+// agents because nobody wrote the frame down. It is written down now, traced
+// to code, not to intuition.
+//
+// CAMERA
+//   CompanionCanvas.applyCamera():
+//       camera.position.set(
+//         target.x + dist·sin(phi)·sin(theta),
+//         target.y + dist·cos(phi),
+//         target.z + dist·sin(phi)·cos(theta));
+//   Home is theta = 0 (CompanionCanvas HOME) and phi = PHI_HOME = 1.53 ≈ π/2
+//   (lib/orbit-limits.ts), so the camera sits on **+Z** at
+//   (0, ~1.05 + 0.04·dist, +0.999·dist) and looks toward **−Z**.
+//   `camera-right` is +X.
+//
+// MODEL ROOT
+//   lib/vrm/avatar.ts calibrateFacing() premultiplies the avatar root yaw
+//   until the shoulder axis says forward == +Z:
+//        // forward = up × (right−left); we want forward == +Z
+//        const fx = d.z; const fz = -d.x;   // d = rightShoulder − leftShoulder
+//   Shipped seed-san bind pose: leftShoulder x = +0.0434,
+//   rightShoulder x = −0.0434 (measured in tests/poke-front-back-convention).
+//   ⇒ character-right = −X and, by the rule above, character-forward = +Z.
+//
+//   character-forward  = +Z  → **TOWARD the camera** (she faces us)
+//   character-right    = −X  → screen-LEFT (camera-right is +X)
+//
+// WHAT `impulse` MEANS (classifyPoke / recoilXZ)
+//   `impulse` is the PUNCH TRAVEL vector = the camera ray, i.e. the direction
+//   the finger moves THROUGH her. recoilXZ() prefers `extra.rayDir` (the
+//   camera→contact ray) and `recoilXZ` returns it verbatim, so:
+//       poke on her CHEST (camera side)  → travel −Z → impulse.z ≈ −1
+//       poke on her BACK  (camera behind) → travel +Z → impulse.z ≈ +1
+//   directionFromAxes() evaluates atan2(s, −f), so a −Z travel reads `front`
+//   and a +Z travel reads `back`. That sign owns the voice slot and the zone
+//   gains and MUST NOT flip — only the body reaction moves (below).
+//
+// BODY LEAN, FRONT/BACK (owner 2026-11-26: "reverse only the front and back")
+//   She recoils AWAY from an axial poke:
+//       front poke (travel −Z) → lean −Z → AWAY from the camera
+//       back poke  (travel +Z) → lean +Z → TOWARD the camera
+//   spinePitch sign is measured on the shipped VRM, not assumed
+//   (tests/poke-front-back-convention.test.ts):
+//       spinePitch > 0 → chest world z rises  (toward +Z = toward camera)
+//       spinePitch < 0 → chest world z falls  (toward −Z = away from camera)
+//   so a FRONT poke must end with spinePitch < 0.
+//
+// THE SINGLE SIGN DECISION
+//   pokeBodyReaction() leans ALONG −fallZ (AXIAL_TOWARD_POKE = −1):
+//       | poke  | impulse.z | fallZ given to pokeBodyReaction | az=−fallZ | spinePitch | chest |
+//       | front |    −1     | +1 (axialRecoilFall mirrors it)  |    −1     |  negative  | −Z, away |
+//       | back  |    +1     | −1                               |    +1     |  positive  | +Z, toward |
+//   axialRecoilFall() is the one and only place the axial sign is decided; its
+//   single call site is CompanionCanvas, at the pokeSectionBodyReaction call.
+//   Lateral (X) is untouched there: the side lean still tips toward the
+//   finger's screen side (r291), and zone `side` keeps its recipe verbatim.
+//   If a direction looks wrong, fix it HERE — never by flipping a test.
+// ===========================================================================
 
 export type TalkZone =
   | 'head'
@@ -58,7 +120,10 @@ export interface PokeClass {
   zone: TalkZone;
   /** Side the punch came from, in the character's facing frame. */
   direction: PokeDirection;
-  /** Horizontal recoil (away from the poke), world XZ, unit length. */
+  /**
+   * Punch TRAVEL vector (the camera ray), world XZ, unit length.
+   * Front hit → −Z, back hit → +Z. See the convention header.
+   */
   impulse: { x: number; z: number };
   sideSign: number;
   /** Character facing axes used to classify the punch (XZ). */
@@ -126,8 +191,9 @@ function recoilXZ(hit: Vec3, hips: Vec3, extra?: PokeHitExtra): { x: number; z: 
   const away = normXZ({ x: hips.x - hit.x, z: hips.z - hit.z });
   // Prefer the poke ray: the punch continues through the contact. Mesh
   // normals are next (outward → recoil is −normal). Hips−hit is last.
-  // Verified on calibrated VRMs (forward +Z toward camera): a front chest
-  // hit yields impulse −Z so spine pitch leans away from the poke.
+  // NOTE: this is the TRAVEL vector (into her), which is why a front chest
+  // tap returns −Z. The body's away-from-the-punch lean is applied by the
+  // caller through axialRecoilFall(); see the convention header.
   if (extra?.rayDir && Math.hypot(extra.rayDir.x, extra.rayDir.z) >= 0.25) {
     return normXZ({ x: extra.rayDir.x, z: extra.rayDir.z });
   }
@@ -427,22 +493,47 @@ const CAP = {
 const LATERAL_LEAN_AMP = 1.38;
 
 /**
- * Axial sign (owner 2026-11-23, R13 extended to the front/back axis).
+ * Engine axis convention: `spinePitch = az·gain·punch` with `az = fallZ·−1`,
+ * i.e. pokeBodyReaction leans ALONG −fallZ. It is NOT the front/back rule by
+ * itself — the caller decides which vector to hand it.
  *
- * `fallZ` still says WHERE the punch came from: front hit → −1, back hit → +1.
- * Direction labels, zone gains and poke voices read that unchanged. What the
- * body does follows the owner rule instead of a physics recoil: she tips
- * TOWARD the poke on the axial axis too, so a front poke flexes her forward
- * (toward the finger) and a back poke arches her back. Positive spineX is a
- * forward lean (see moves.ts "lean into the run"), which is why the ─1 lives
- * here and not in the canvas.
+ * The live canvas hands `axialRecoilFall()` output, which mirrors the axial
+ * component of the punch-travel vector, so a front poke ends up with
+ * spinePitch < 0 and she leans AWAY from the camera (owner 2026-11-26:
+ * "reverse only the front and back"). See the convention header at the top of
+ * this file for the traced camera/model axes and the sign table.
  *
- * The owner reported this twice: "all the poke movement, just move to the
- * opposite side, just simply flip it backward to forward". Do NOT restore the
- * away-from-the-punch sign on Z — that is the inversion he keeps seeing, and
- * it is the axial twin of the lateral "recoil away" mistake in #443 / #554.
+ * The direct unit tests in tests/poke-{hit,side-lean,8way-fullbody}.test.ts
+ * pin this engine's numbers with the raw travel vector (front → −1 → positive
+ * pitch). Those numbers are a property of THIS function and are intentionally
+ * unchanged; the owner-facing direction lives in axialRecoilFall().
  */
 const AXIAL_TOWARD_POKE = -1;
+
+/**
+ * THE front/back sign decision. Mirror the AXIAL (Z) component of the
+ * punch-travel fall so the body recoils away from the punch; the lateral (X)
+ * component is returned untouched so no side lean can move.
+ *
+ *   poke on her chest, camera at +Z → travel (0, −1) → body fall (0, +1)
+ *   poke on her back,  camera at −Z → travel (0, +1) → body fall (0, −1)
+ *
+ * With `az = fallZ·AXIAL_TOWARD_POKE` inside pokeBodyReaction that is
+ * spinePitch < 0 (chest toward −Z, away from the camera) for a front poke and
+ * spinePitch > 0 (chest toward +Z, toward the camera) for a back poke.
+ *
+ * Zone `side` is returned verbatim: the owner confirmed the r291 side blend is
+ * correct ("the side poke move is now in the correct blend direction"), and
+ * its lateral recipe (roll toward the finger) is driven by `fallX`, which this
+ * function never touches. Only the front/back axis changes here.
+ */
+export function axialRecoilFall(
+  fall: { x: number; z: number },
+  zone: TalkZone,
+): { x: number; z: number } {
+  if (zone === 'side') return { x: fall.x, z: fall.z };
+  return { x: fall.x, z: -fall.z };
+}
 
 function clamp(v: number, m: number): number {
   return v < -m ? -m : v > m ? m : v;
@@ -451,12 +542,14 @@ function clamp(v: number, m: number): number {
 /**
  * Punch reaction for one sample.
  * t is 0 at the hit and 1 at the end of the window.
- * fallX/fallZ: the poke direction vector, world XZ (front hit → fallZ −1).
- * The body tips TOWARD the poke on both axes (Owner R13, extended to Z on
- * 2026-11-23): lateral hits lean to the finger's screen side, and axial hits
- * flex toward the finger instead of recoiling away from it. `fallZ` still
- * classifies the direction (front/back gains, zone reads), so the sign flip
- * lives in AXIAL_TOWARD_POKE and never in the caller.
+ * fallX/fallZ: the fall vector, world XZ. On Z the body leans ALONG −fallZ
+ * (AXIAL_TOWARD_POKE). Live callers pass `axialRecoilFall()` — the axial
+ * component mirrored off the punch travel — so front/back recoil away from
+ * the punch (front poke → spinePitch < 0 → away from the camera). Lateral
+ * hits lean to the finger's screen side (Owner R13) because fallX keeps its
+ * sign. `direction` (when given) still classifies gains/voices; the section
+ * path always passes it, so the Z sign never swaps a front voice for a back
+ * one.
  * A head poke tips the head (plus soft torso follow in poke-zones).
  * A belly poke recesses the abdomen; the head counters for balance.
  * Nothing here translates the scene root.
@@ -713,10 +806,11 @@ export function lateralFallTowardScreenSide(
  * owner reported (2026-11-22, second occurrence after #443/#554).
  *
  * Only the component along the camera's right axis is reflected. The
- * camera-forward component — everything that classifies front/back and drives
- * the r290 axial lean — is bit-for-bit preserved, so a front poke produces the
- * same spinePitch / headX it did before. When the sign is already correct
- * (the normal case) this returns the input unchanged.
+ * camera-forward component — everything that classifies front/back — is
+ * bit-for-bit preserved here; the axial lean sign is decided separately, and
+ * only, by axialRecoilFall() (see the convention header at the top of this
+ * file). When the sign is already correct (the normal case) this returns the
+ * input unchanged.
  */
 export function flipPokeFallToFingerSide(
   fall: { x: number; z: number },
