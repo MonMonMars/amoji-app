@@ -39,6 +39,7 @@ import { dancePerfClipSources } from '../lib/dance-clip-sources';
 import { markMartialFlowClipLoaded } from '../lib/martial-speak-guard';
 import { martialPerfClipSources } from '../lib/martial-clip-sources';
 import { beatAlignedVrmaTime, timeScaleForProfile } from '../lib/performance-motion';
+import { steerDanceTimeScale } from '../lib/perf-tempo-lock';
 import { isLibraryClipAudible, libraryBedPlaybackSec } from '../lib/music';
 import { liveBeatSnapshot } from '../lib/live-beat';
 import { visemeWeights } from '../lib/vocal-envelope';
@@ -789,6 +790,8 @@ export default function CompanionCanvas({
     let perfBaseTimeScale = 1;
     /** Track BPM the profile was built from (0 = unknown, no live correction). */
     let perfTrackBpm = 0;
+    /** Rate last written by live-tempo steering (0 = no clip yet). */
+    let perfTempoRate = 0;
     let idleOrder: string[] = [];
     /** One upright stand — no A→B idle crossfade rotation (Pixel blend-bad). */
     let singleIdleStand = true;
@@ -966,6 +969,7 @@ export default function CompanionCanvas({
         : personality;
       perfBaseTimeScale = action.timeScale;
       perfTrackBpm = profile?.bpm ?? 0;
+      perfTempoRate = 0;
       // Dance/sing shows loop with the music bed — even when perfMotionProfile
       // is not set yet (LoopOnce + clamp looked like a frozen static pose).
       // Tai chi / idle-rail lib_C* martial flows loop for the full move clock.
@@ -2065,8 +2069,15 @@ export default function CompanionCanvas({
         && beatNow.confidence >= 0.5
         && perfTrackBpm > 0
       ) {
-        const ratio = Math.max(0.85, Math.min(1.18, beatNow.bpm / perfTrackBpm));
-        perfAction.timeScale = perfBaseTimeScale * ratio;
+        // Steer, never teleport: a wobbling estimate must not lurch the clip's
+        // speed (see lib/perf-tempo-lock.ts — the "stop motion dance" report).
+        perfTempoRate = steerDanceTimeScale(
+          perfBaseTimeScale,
+          beatNow.bpm / perfTrackBpm,
+          dt,
+          perfTempoRate,
+        );
+        perfAction.timeScale = perfTempoRate;
       }
       const beatPulse = beatNow?.pulse ?? 0;
       // r95 (Master Simon): NO hand-composed skeleton choreography. The old

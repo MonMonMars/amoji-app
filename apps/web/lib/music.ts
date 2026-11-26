@@ -10,6 +10,10 @@
 // plucked-string piano arrangement (broken-chord left hand, theme melody
 // right hand) plus a PERFORMANCE layer so sing/duet/piano music survives
 // the chat pipeline's generic stopMusic() calls for the length of the show.
+// r2026-11-26 — this band is AMBIENCE/performance only. A music ask resolves a
+// real bed (curated Jamendo stream or a bundled CC0 clip); if every real bed
+// fails the show stops instead of substituting these tones (owner heard them
+// as a "do do" noise when the Mixkit previews started 403ing).
 
 import {
   createDefaultAudioContext,
@@ -457,6 +461,8 @@ function haltPerformanceAudioOnly(opts?: { fadeOutSec?: number }): void {
     perfTimer = null;
   }
   perfPreserve = false;
+  // Every new show starts the real-bed failure ladder from the top.
+  bedFallbackDepth = 0;
   haltBand();
   haltPiano();
   haltClip(opts);
@@ -599,14 +605,67 @@ export function isLibraryClipAudible(): boolean {
 function emitLibraryClipPlaying(id: string | null = clipId): void {
   if (typeof window === 'undefined' || !id) return;
   clipAudible = true;
+  // A real bed made it to audible — the failure ladder starts fresh next time.
+  bedFallbackDepth = 0;
   window.dispatchEvent(new CustomEvent('amoji:library-clip', { detail: { state: 'playing', id } }));
 }
 
-/** Procedural band when a file/stream bed cannot start — still emit playing. */
-function startLibraryBandFallback(characterId: string): void {
-  startMusic(characterId);
-  markBedPlaybackAnchor();
-  emitLibraryClipPlaying(clipId);
+/**
+ * A file/stream bed failed (dead CDN, CORS, decode). Music must still be REAL
+ * audio — never the procedural band.
+ *
+ * Owner report 2026-11-25: "the music won't play, it plays some do do strange
+ * sound". The Mixkit preview CDN answers 403 Forbidden to a browser <audio>
+ * (verified live: `MEDIA_ERR_SRC_NOT_SUPPORTED`, code 4; `curl -I` → 403), and
+ * the old fallback here started `startMusic()` — the WebAudio tone generator —
+ * while still emitting `playing`. So every dance bed that failed became a
+ * synthetic "do do do" and the UI announced a real track over it.
+ *
+ * New ladder, real audio only:
+ *   1. the keyless curated Jamendo catalog (same-origin-proxyable, CORS-safe);
+ *   2. a bundled CC0 bed (`/public/audio/…`, fetched + decoded locally);
+ *   3. nothing — stop honestly instead of making an odd noise.
+ * `startMusic()` stays available for ambience/piano performances
+ * (`startPerformanceMusic`) but is never a music bed.
+ */
+let bedFallbackDepth = 0;
+
+function startRealBedFallback(characterId: string): void {
+  if (typeof window === 'undefined') return;
+  if (isMasterMuted() || bedFallbackDepth >= 2) {
+    // Nothing real left to play: drop the bed instead of beeping at her.
+    haltClip();
+    return;
+  }
+  const kind: 'song' | 'dance' = clipKind === 'song' ? 'song' : 'dance';
+  let real: PerformanceClip | null = null;
+  if (bedFallbackDepth === 0 && kind === 'dance') {
+    const curated = curatedTrackForStyle(clipStyle || undefined, 0);
+    if (curated) {
+      const bed = curatedMusicBed(curated);
+      if (!bedHostDead(bed.file)) real = bed;
+    }
+  }
+  if (!real) {
+    try {
+      real = pickPerformanceClip({ kind, characterId, bed: kind === 'dance', n: 0 });
+    } catch {
+      real = null;
+    }
+  }
+  if (!real) {
+    haltClip();
+    return;
+  }
+  bedFallbackDepth += 1;
+  clipStyle = real.style;
+  clipVolumeKey = real.volume;
+  clipBase = CLIP_BASE_GAIN[real.kind];
+  clipId = real.id;
+  clipKind = real.kind === 'song' ? 'song' : 'dance';
+  const token = ++loadToken;
+  // `playClip` re-enters this fallback on failure; `bedFallbackDepth` stops it.
+  void playClip(real, token, characterId);
 }
 
 /** Drop the premade clip only. Does not touch the preserve flag or the band. */
@@ -810,7 +869,7 @@ function playClipElement(
       // A stream we believed was CORS-readable can still fail: the edge cache
       // has served a foreign `Access-Control-Allow-Origin` before
       // (docs/MUSIC_STREAMING.md §1). Retry untapped — audible beats silent —
-      // before falling back to the procedural band. Exactly one retry.
+      // before dropping to a real fallback bed. Exactly one retry.
       if (playback?.analysable && !playback.noUntappedRetry) {
         const untapped = playClipElement(url, token, characterId, {
           crossOrigin: null,
@@ -820,7 +879,10 @@ function playClipElement(
         if (untapped) return;
       }
       audio.pause();
-      startLibraryBandFallback(characterId);
+      // 403 on an audio URL surfaces as "cannot play" (code 4): remember the
+      // host so the next music press skips it instead of paying the silence.
+      if (audio.error?.code === 4) noteDeadBed(url);
+      startRealBedFallback(characterId);
     });
     return true;
   } catch {
@@ -834,7 +896,7 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
   const ac = createDefaultAudioContext();
   if (!ac) {
     if (token !== loadToken) return;
-    if (!playClipElement(url, token, characterId)) startLibraryBandFallback(characterId);
+    if (!playClipElement(url, token, characterId)) startRealBedFallback(characterId);
     return;
   }
   try {
@@ -842,7 +904,7 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
     // Suspended context → HTMLAudioElement (gesture-unlocked media path).
     if (ac.state !== 'running') {
       if (token !== loadToken) return;
-      if (!playClipElement(url, token, characterId)) startLibraryBandFallback(characterId);
+      if (!playClipElement(url, token, characterId)) startRealBedFallback(characterId);
       return;
     }
     const res = await fetch(url);
@@ -879,7 +941,7 @@ async function playClip(clip: PerformanceClip, token: number, characterId: strin
   } catch {
     if (token !== loadToken) return;
     if (clipCtx === ac) clipCtx = null;
-    if (!playClipElement(url, token, characterId)) startLibraryBandFallback(characterId);
+    if (!playClipElement(url, token, characterId)) startRealBedFallback(characterId);
   }
 }
 
@@ -914,6 +976,36 @@ type LibraryPerfQuery = ClipQuery & {
 };
 
 /**
+ * Bed hosts that already answered `MEDIA_ERR_SRC_NOT_SUPPORTED` in this session
+ * — the browser's verdict on an HTTP 403 audio URL (code 4). The owner-pinned
+ * Mixkit previews do exactly this every time (verified live 2026-11-25: 403 to
+ * `<audio>`, 403 to `curl -I`), so a second music press must not burn another
+ * failed request and a second of silence before reaching a bed that plays.
+ * Only code 4 is remembered: a transient network failure (code 2) must not
+ * blacklist a provider for the rest of the session.
+ */
+const deadBedHosts = new Set<string>();
+
+function bedHostOf(url: string): string {
+  try {
+    const base = typeof window !== 'undefined' ? window.location.href : 'http://localhost/';
+    return new URL(url, base).host;
+  } catch {
+    return '';
+  }
+}
+
+function bedHostDead(url: string): boolean {
+  const host = bedHostOf(url);
+  return !!host && deadBedHosts.has(host);
+}
+
+function noteDeadBed(url: string): void {
+  const host = bedHostOf(url);
+  if (host) deadBedHosts.add(host);
+}
+
+/**
  * Resolve the streamed bed for a dance ask, in priority order:
  *   1. exact pick from a select chip (Mixkit catalogue, then keyless Jamendo);
  *   2. the owner's pinned Mixkit beds — his own picks always win;
@@ -930,11 +1022,11 @@ function resolveStreamBed(q: LibraryPerfQuery): PerformanceClip | null {
   if (curatedExact) return curatedMusicBed(curatedExact);
   const styleId = q.style as MusicStyleId | undefined;
   const owner = pickOwnerStreamTrack(styleId, q.n ?? 0);
-  if (owner) return streamDanceClip(owner);
+  if (owner && !bedHostDead(owner.url)) return streamDanceClip(owner);
   const curated = curatedTrackForStyle(styleId, q.n ?? 0, q.mood);
   if (curated) return curatedMusicBed(curated);
   const mixkit = styleId ? pickStreamTrack(styleId, q.n ?? 0) : null;
-  return mixkit ? streamDanceClip(mixkit) : null;
+  return mixkit && !bedHostDead(mixkit.url) ? streamDanceClip(mixkit) : null;
 }
 
 /**
@@ -953,7 +1045,8 @@ export function resolveLibraryPerformance(q: LibraryPerfQuery): PerformanceClip 
 /**
  * Play a premade song or dance bed from the library. When `style` is set and
  * a royalty-free stream URL exists, prefer that bed (HTMLAudioElement);
- * otherwise local CC0 clips, then procedural band.
+ * otherwise local CC0 clips. A dead provider degrades to another REAL bed —
+ * never to the procedural band (see `startRealBedFallback`).
  */
 export function startLibraryPerformance(
   q: ClipQuery & { ms: number; style?: MusicStyleId | string; streamId?: string },
@@ -988,7 +1081,7 @@ export function startLibraryPerformance(
     // Curated Jamendo beds hand their CORS verdict to the element so a
     // readable stream can drive the beat analyser; Mixkit stays untapped.
     if (!playClipElement(synthetic.file, token, clipCharacter, playbackForClip(synthetic))) {
-      startLibraryBandFallback(clipCharacter);
+      startRealBedFallback(clipCharacter);
     }
     return synthetic;
   }

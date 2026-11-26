@@ -283,6 +283,15 @@ function asStd(mat: THREE.Material): THREE.MeshStandardMaterial {
 /**
  * Draw the iris in front of the eye-white, and catchlights in front of the
  * iris, on every mesh whose material name identifies an eye part.
+ *
+ * Called from the render loop on every frame (`CompanionCanvas`), so it must be
+ * idempotent and CHEAP. r2026-11-26: it used to write every value and set
+ * `material.needsUpdate = true` unconditionally — i.e. `material.version++` for
+ * every eye material, 60×/s. three.js treats a version bump as "re-initialise":
+ * it re-runs program/uniform setup for that material on the next draw, which
+ * costs real frame time on a phone and made the dance read as stop-motion.
+ * Now each value is only written when it actually differs, so the first frame
+ * pins everything and later frames write nothing.
  */
 export function stabilizeEyeMaterials(root: THREE.Object3D): void {
   root.traverse((node) => {
@@ -296,49 +305,90 @@ export function stabilizeEyeMaterials(root: THREE.Object3D): void {
       if (!kind) continue;
       touched = true;
       const m = asStd(mat);
-      if (m.emissive) m.emissive.setRGB(0, 0, 0);
-      if (m.emissiveMap && (kind === 'iris' || kind === 'white')) m.emissiveMap = null;
-      m.polygonOffset = true;
+      // Only a change that alters the compiled program / draw state needs a
+      // `needsUpdate`; plain numeric values (offset factors, order) do not.
+      let dirty = false;
+      if (m.emissive && (m.emissive.r !== 0 || m.emissive.g !== 0 || m.emissive.b !== 0)) {
+        m.emissive.setRGB(0, 0, 0);
+      }
+      if (m.emissiveMap && (kind === 'iris' || kind === 'white')) {
+        m.emissiveMap = null;
+        dirty = true;
+      }
+      if (!m.polygonOffset) {
+        m.polygonOffset = true;
+        dirty = true;
+      }
       if (kind === 'white') {
-        m.polygonOffsetFactor = 2;
-        m.polygonOffsetUnits = 2;
-        m.depthWrite = true;
+        if (m.polygonOffsetFactor !== 2) m.polygonOffsetFactor = 2;
+        if (m.polygonOffsetUnits !== 2) m.polygonOffsetUnits = 2;
+        if (!m.depthWrite) {
+          m.depthWrite = true;
+          dirty = true;
+        }
         order = Math.max(order, 1);
       } else if (kind === 'iris') {
-        m.polygonOffsetFactor = -3;
-        m.polygonOffsetUnits = -3;
-        m.depthWrite = true;
-        m.transparent = false;
+        if (m.polygonOffsetFactor !== -3) m.polygonOffsetFactor = -3;
+        if (m.polygonOffsetUnits !== -3) m.polygonOffsetUnits = -3;
+        if (!m.depthWrite) {
+          m.depthWrite = true;
+          dirty = true;
+        }
+        if (m.transparent) {
+          m.transparent = false;
+          dirty = true;
+        }
         const mapReady = !!(m.map && (m.map as THREE.Texture).image);
         if (!mapReady) {
           // A masked iris with no texture discards every fragment and the
           // white mesh behind it reads as a blank eye.
-          m.map = null;
-          m.alphaTest = 0;
-          m.color?.setRGB(0.16, 0.09, 0.08);
+          if (m.map) {
+            m.map = null;
+            dirty = true;
+          }
+          if (m.alphaTest !== 0) {
+            m.alphaTest = 0;
+            dirty = true;
+          }
+          if (m.color && (m.color.r > 0.17 || m.color.g > 0.1 || m.color.b > 0.09)) {
+            m.color.setRGB(0.16, 0.09, 0.08);
+          }
         } else if (m.alphaTest > 0.55) {
           m.alphaTest = 0.4;
+          dirty = true;
         }
         order = Math.max(order, 3);
       } else if (kind === 'highlight') {
-        m.polygonOffsetFactor = -5;
-        m.polygonOffsetUnits = -5;
-        m.depthWrite = false;
-        m.transparent = true;
+        if (m.polygonOffsetFactor !== -5) m.polygonOffsetFactor = -5;
+        if (m.polygonOffsetUnits !== -5) m.polygonOffsetUnits = -5;
+        if (m.depthWrite) {
+          m.depthWrite = false;
+          dirty = true;
+        }
+        if (!m.transparent) {
+          m.transparent = true;
+          dirty = true;
+        }
         order = Math.max(order, 4);
       } else {
-        m.polygonOffsetFactor = -4;
-        m.polygonOffsetUnits = -4;
-        m.depthWrite = false;
-        m.transparent = true;
+        if (m.polygonOffsetFactor !== -4) m.polygonOffsetFactor = -4;
+        if (m.polygonOffsetUnits !== -4) m.polygonOffsetUnits = -4;
+        if (m.depthWrite) {
+          m.depthWrite = false;
+          dirty = true;
+        }
+        if (!m.transparent) {
+          m.transparent = true;
+          dirty = true;
+        }
         order = Math.max(order, 5);
       }
-      m.needsUpdate = true;
+      if (dirty) m.needsUpdate = true;
     }
     if (touched) {
-      mesh.renderOrder = order;
-      mesh.visible = true;
-      mesh.frustumCulled = false;
+      if (mesh.renderOrder !== order) mesh.renderOrder = order;
+      if (!mesh.visible) mesh.visible = true;
+      if (mesh.frustumCulled) mesh.frustumCulled = false;
       const s = mesh.scale;
       if (s.x * s.x + s.y * s.y + s.z * s.z < 1e-8) s.set(1, 1, 1);
     }
@@ -348,7 +398,8 @@ export function stabilizeEyeMaterials(root: THREE.Object3D): void {
     const max = Math.max(Math.abs(node.scale.x), Math.abs(node.scale.y), Math.abs(node.scale.z));
     if (max < 5) return;
     if (!/ribon|ribbon|リボン/i.test(node.name || '')) return;
-    node.scale.set(1, 1, 1);
+    const s = node.scale;
+    if (s.x !== 1 || s.y !== 1 || s.z !== 1) s.set(1, 1, 1);
   });
 }
 
