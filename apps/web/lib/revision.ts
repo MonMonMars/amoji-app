@@ -604,7 +604,105 @@
 // the expression while talking; a secondary emotion blends in `lib/vrm/eyes.ts`
 // on the roster profile; and character `a94-rita` retires from the live roster
 // (44 → 43) with a prefs migration to `a93-edokko`.
-export const APP_REVISION = 'r2026-11-24.301';
+// r2026-11-24.302 (this branch ships at .302 — .299/.300/.301 were taken while
+// it was being verified): Edge SSML is capped at TWO element children inside
+// <voice>. The readaloud endpoint closes the socket with `1007: SSML is
+// invalid` on three or more, and `buildEdgeSsml` emitted one <prosody> per
+// clause plus a <break> between them — so every reply with three clauses was
+// silent, two failures tripped EDGE_FAILURE_LIMIT=2 and parked the Edge tier
+// for 5 minutes. This is the owner's long-running "mostly no voice" report:
+// the mouth keeps animating off the text clock while the audio 502s.
+// Clauses are now merged into at most two contiguous prosody spans (1 → 1,
+// 2 → 2, 3+ → first half / second half, first clause's contour opening and the
+// final clause's closing), <break> is gone in favour of punctuation pauses,
+// and a lead tic is folded into the first span. `mstts:express-as` is gated
+// OFF (EDGE_EXPRESS_AS_ENABLED = false): any styled body makes upstream end
+// the turn with zero audio frames, so the relay repaired it on every styled
+// line (Attempts: 2) and the repaired mp3 was byte-identical in length to the
+// plain body — the style never reached the audio. Live: 1–6 clause lines in
+// yue/zh/ja/en all answer 200 with X-Amoji-Attempts: 1.
+// r2026-11-24.303: the male voices come back. Commit 5989fce0 deleted every
+// relay male seed from `lib/voice-capability.ts` and nothing restored them when
+// the Cloudflare relay itself landed, so the picker had no male rows at all and
+// every remaining row fell through to the same female default (`WanLung` was
+// the owner's priority: `WanLung 男 / HiuMaan 女 / HiuGaai 女`). The seeds are
+// back — yue `zh-HK-WanLungNeural`, zh `zh-CN-YunjianNeural`, ja
+// `ja-JP-KeitaNeural`, en `en-US-GuyNeural` — each with real per-locale labels
+// in `prefs.ts` so the hygiene test cannot pass on copied English. They are
+// gated on relay reachability, so a static export with no relay renders no
+// silent male button. Voice auditions are single-flight (`lib/audition-claim.ts`)
+// and the previous <audio> element is torn down before a new one starts, so a
+// preview plus a card greeting can no longer overlap as two voices at once.
+// r2026-11-24.304: poke FRONT/BACK lean reversed — and now written down.
+// Owner: "the side poke move is now in the correct blend direction, but at the
+// same time you have flipped the front and back poke move direction, please
+// reverse only the front and back direction." The axial lean was leaning her
+// TOWARD an axial punch; it now recoils AWAY from it (a front poke leans her
+// back, away from the camera; a back poke leans her forward, toward it). The
+// lateral blend is untouched and zone `side` keeps its r291 recipe verbatim.
+//
+// THE CONVENTION (also the header of `lib/poke-hit.ts`; do not re-derive it):
+//   · home camera is on +Z looking −Z (`applyCamera`, theta 0);
+//   · `calibrateFacing` in `lib/vrm/avatar.ts` forces the model forward to +Z,
+//     so character-forward points TOWARD the camera (she faces us), and
+//     character-right is −X;
+//   · `classifyPoke().impulse` is the PUNCH TRAVEL vector (front hit travels
+//     −Z, back hit +Z) and it owns the front/back label + voice slot;
+//   · positive spinePitch moves the chest +Z (toward camera), negative moves it
+//     −Z (away) — measured on seed-san, not assumed;
+//   · `axialRecoilFall()` in `lib/poke-hit.ts` is the single sign decision
+//     (mirror Z only) and `CompanionCanvas` is its only call site.
+// r2026-11-24.305: a reply must not open on a lone 呀.
+// Owner, after asking to hear a song: "呀 / 好！ / 呢首叫 Soave long / 我而家唱俾你聽"
+// and then "please don't say 呀, very strange to start with a single word like
+// this". The opener was not the model — `fillers.ts` joy tic was literally
+// `呀！` for yue/zh, prepended by `speak()` above `INTERJECTION_AT`. 呀 is a
+// sentence-final particle (係呀), so spoken alone it is a stray syllable; the
+// joy tic is now 好嘢！/太好了！ and the love sigh is 哎呀……. `interjectionSpeakable()`
+// rejects any tic that is one bare particle, so the same complaint cannot
+// return with a different particle.
+// r2026-11-24.306: the song performance no longer restarts mid-song.
+// Owner: "same to the song, the song move is like stop motion, not smooth".
+// The sing body already ran on the same continuous rAF clock as dance, and
+// `Sing.vrma` is 24 fps LINEAR — so the stepping was a RESTART, not a clock.
+// `playPerf()` reset() the action on every re-entry (armed retry, a second
+// `library-clip` playing event, a re-triggered move), snapping the 14 s loop
+// back to frame 0 mid-song. A loop already on stage now keeps its clock, and
+// the sing/dance retry resumes in place instead of re-entering playPerf.
+// r2026-11-24.307: no talking while the music is playing.
+// Owner: "please don't talk while singing or music time." There was no speech
+// gate during a performance — a poke reaction, a poke resume, idle chatter or a
+// replay tap could all be spoken over her own song. speak() (the single choke
+// point for every audible line) is now silent while `isLibraryClipAudible()`,
+// which is true only once a bed is actually sounding. The show's announcement
+// happens BEFORE the bed (beginShow retires any old bed first, and
+// whenSpeechIdle holds the new one until speech is idle), a real user turn ends
+// the bed via stopSpeakingForInterrupt, and a poke during a show still plays
+// its impact + body reaction but says nothing and arms no resume.
+// r2026-11-24.308: the music YIELDS when she needs to talk.
+// Owner: "stop the music or song if need to talk." Instead of muting her, a line
+// that must be heard now ends the bed first: a poke during a show stops the
+// bed before the impact clip and the spoken reaction (so the reaction is never
+// layered over her song, and no resume is armed over it), and any `resumable`
+// line reaching speak() while a bed is audible does the same. Non-essential
+// lines (fillers, idle chatter, replay taps) are still dropped rather than
+// interrupting the music.
+// r2026-11-24.309: no reply opens on a lone particle — text level, not just tics.
+// Owner re-reported the same 呀 opener after .305 (the tic fix was correct but
+// not the source): the reply TEXT itself began with a bare 呀, which the
+// clause splitter spoke and displayed as its own bubble. `stripLoneLeadParticle()`
+// now runs in cleanForDisplay (bubbles) and cleanForSpeech (every spoken path),
+// and prepareSpokenLead refuses a one-particle lead. `performanceIntroLine` no
+// longer starts "好！" either — it splits into its own bubble — so it opens
+// "好，呢首叫…" as one clause.
+// r2026-11-24.310: left arm stops folding into the torso. `clampUpperArmAdduction`
+// floored BOTH upper arms against the right−left shoulder line, which is outward
+// only for the RIGHT arm; the left arm's outward is the mirrored vector, so its
+// outward component read negative and it was never opened — the left hand stayed
+// buried while the right hung at idle. The clamp is now side-aware, and the
+// calibrated natural hang abducts each arm toward its own side (+X left, −X right
+// per the poke-hit.ts frame). Regression: tests/arm-outward-symmetry.test.ts.
+export const APP_REVISION = 'r2026-11-24.310';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';
