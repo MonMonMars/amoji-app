@@ -1,11 +1,81 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-24.297` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
-**Purpose:** Human-only checks after #419–#437 + #458 + r271–r294. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
+**Tip on main:** `r2026-11-24.310` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Purpose:** Human-only checks after #419–#437 + #458 + r271–r310. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
 Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, tap **Refresh** on the “Update ready” chip if shown, or remove home-screen icon and re-add so the service worker picks up the current **`APP_REVISION`** cache (stale shells hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
+
+## Priority now — the r305–r310 landing (owner reports of 2026-11-25/26)
+
+Verified on the local build (`http://127.0.0.1:4173` → `revision.txt` = `r2026-11-24.310`) with the rig readout at `/chat?bones=1`. None of these are phone-confirmed yet.
+
+### 0. Left arm no longer blends into the body (r2026-11-24.310)
+
+Owner: “the left hand of the character always blended into the body … left arm always blended”. The every-frame adduction guard floored **both** upper arms against the `right − left` shoulder line, which is outward only for the **right** arm. The left arm's outward is the mirrored vector, so its outward component read negative and the guard never engaged — the right arm held a clean hang while the left folded into the torso. The guard is now side-aware, and the load-time natural hang abducts each arm toward its own side.
+
+Desktop proof (idle, `/chat?bones=1`): left upper arm `x=+0.256`, hand `x=+0.229`; right `x=−0.269`, hand `x=−0.236` — mirror-symmetric, both hands clear of the torso.
+
+- [ ] Idle 30 s: is the **left hand outside the hip/thigh**, mirroring the right, or still inside the body?
+- [ ] Walk her through an idle A→B transition — does the left arm **stay out** the whole way, or sink in mid-blend?
+- [ ] Poke the left arm and the torso: does she still read as natural (no collapsed shoulder), and is the left arm still open afterwards?
+- [ ] Song + dance: does the left arm behave like the right (no sleeve/forearm through the ribs)?
+- [ ] Report: `ROW: left-arm DEVICE: <model>` + still-blended / sinks-mid-blend / ok
+
+### 1. Song and dance are smooth, not stop-motion (r306 + dance driver)
+
+Owner: “the song move is like stop motion, not smooth” / same for dance. Three separate causes were removed: `playPerf()` used to `action.reset()` a loop that was already running (teleporting the playhead to frame 0 mid-song), the dance playback rate was teleported to a wobbling live-BPM estimate every frame, and every eye material was re-initialised 60×/s.
+
+- [ ] Play a song: does the body move **continuously** for the whole track, or restart/jerk partway through?
+- [ ] Dance bed: does the tempo look steady (no speed-up/slow-down lurch)?
+- [ ] Is it smooth on the **phone** specifically (this was a frame-rate-sensitive complaint)?
+- [ ] Report: `ROW: perf-smooth DEVICE: <model>` + restarts / lurch / steppy / smooth
+
+### 2. She does not talk over her own song (r307 + r308)
+
+Owner: “please dont talk while singing or music time” then “stop the music or song if need to talk”. A line that must be heard (a real reply, a poke reaction) now **ends the bed** first; background lines (idle chatter, fillers, replay taps) are dropped instead.
+
+- [ ] Start a song, then poke her: does the music **stop** before she reacts (not both at once)?
+- [ ] Start a song and wait: does she stay quiet over it (no idle chatter layered on top)?
+- [ ] Send a chat message during a song: does the bed yield so the reply is audible?
+- [ ] Report: `ROW: music-vs-voice DEVICE: <model>` + both-at-once / never-yields / ok
+
+### 3. No lone 「呀」 opener, no split 「好！」 (r305 + r309)
+
+Owner: “Please don't say ‘呀’ very strange to start with a single word like this”. Single-syllable CJK particles are stripped from both the bubble text and the spoken audio, and the song intro no longer splits into its own 「好！」 bubble.
+
+- [ ] Ask for a song several times: does any reply open on a bare 呀 / 啊 / 嗯?
+- [ ] Does the song intro arrive as **one** clause (“好，呢首叫…”) rather than a separate “好！” bubble first?
+- [ ] Report: `ROW: lone-particle DEVICE: <model>` + still-seen / fixed
+
+### 4. Male voice is audible, never a woman, never silence
+
+Owner: “still no male voice. the button is here, but no voice out”. Male lines previously skipped the device voice under the chat mic latch, leaving only Google-Translate's single female speaker (Referer-blocked on desktop Chrome) — total silence. Male choices now reach a real male voice or report themselves unavailable, and gTTS is never used for male.
+
+- [ ] Pick a **male** voice, send five messages: does every line speak in a male voice?
+- [ ] Does any male line come out **female**, or go silent?
+- [ ] If a male source is genuinely unavailable, does the button disable itself with a reason instead of doing nothing?
+- [ ] Report: `ROW: voice-male-310 DEVICE: <model>` + silent / female / dead-button / ok
+
+### 5. News reads the story, says the day, does not repeat
+
+Owner: “the news now still too short … say the day of the news rather than say 最近 … read the detail”. The Google News `<description>` is a redirect anchor wrapping the title (no lede at all), so a thin row now pulls a real body from Bing News RSS with a same-story check; the day word comes from `publishedAt` in HK time; the duplicate headline beat and the UTF-16 1-character tail chunk are gone.
+
+- [ ] Ask 「今日有咩新聞？」: is it **several sentences**, not just the headline?
+- [ ] Does it say a **day** (今日 / 琴日 / 禮拜二 / a date) rather than 最近?
+- [ ] Is anything said **twice**, or is there a lone 1-character fragment?
+- [ ] Does unrelated chatter (the flower line) follow the news read?
+- [ ] Report: `ROW: news-310 DEVICE: <model>` + title-only / 最近 / repeated / lone-char / chatter / ok
+
+### 6. Music press plays a real track, and the gate sample can be stopped
+
+Owner: “I pressed the music button, first the music won't play, it play some do do strange sound”. Mixkit previews return **403**, and the old fallback played a synthetic oscillator melody while the UI announced a real song. It now falls back to real audio only (curated Jamendo → bundled CC0 → honest stop). Separately the speaker test gained a **Stop** control: `testVoiceChain()` treats a cancel as “that tier didn't speak” and falls through to the next hop, so one `stopSpeaking()` let the browser-synth hop restart the same line.
+
+- [ ] Press music: is a **real track** audible (not a beeping/tone melody)?
+- [ ] On the `/gate/audio` speaker test, does the button become **Stop** while it plays, and does Stop actually silence it (nothing restarts a second later)?
+- [ ] After pressing Stop, does the yes/no pair stay disabled (a cut sample must not count as “heard”)?
+- [ ] Report: `ROW: music-real DEVICE: <model>` + tones / silent / no-stop / restarts / ok
 
 ## Priority now — the r294 combined landing (#579 + #581 + #580)
 
