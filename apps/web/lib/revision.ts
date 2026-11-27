@@ -716,7 +716,21 @@
 // heard), and pokeBurstSpokenLine() steps past bank entries that
 // `loadingFillerKind()` would drop ("Heh" / "呵" / "ふっ"). Regression:
 // tests/poke-sound-must-hear.test.ts.
-export const APP_REVISION = 'r2026-11-24.311';
+// r2026-11-24.312: the face is driven by the real voice, and a strong emotion
+// lands with weight. (1) TTS mouth — an AnalyserNode on the audio element that
+// is actually playing now feeds `feedSpeechLevel` (amplitude → jaw, spectrum →
+// vowel) through the existing `vocal-envelope` helpers, with attack/release
+// smoothing so the jaw does not jitter. Only same-origin/blob sources are
+// tapped (a MediaElementSource on cross-origin audio outputs silence); gTTS's
+// translate.google.com URL, speechSynthesis (OS voice) and any suspended or
+// dead tap keep the old syllable clock. (2) The frame-mapper can emit ARKit
+// brow/lip/cheek params as their OWN expression targets and removes that
+// weight from the sorrow/angry fold — dormant on every shipped VRoid rig (six
+// presets only), ready for a rig that ships the morphs. (3) Presentation, not
+// data: a strong emotion punches to ~1.22× for ~120 ms then settles and holds
+// (`lib/emotion-presentation.ts`), and surprise holds the lids open so the
+// wide-eye read is not cut by an idle blink.
+export const APP_REVISION = 'r2026-11-24.312';
 
 /** app identity, rendered on the splash screen and status plate */
 export const APP_NAME = 'Amoji';

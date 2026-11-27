@@ -16,6 +16,11 @@
  * authored spelling.
  */
 
+import {
+  EXTRA_FACE_CHANNELS,
+  type ExtraFaceChannel,
+} from '@amoji/vrm-renderer';
+
 export type ExpressionNameMap = ReadonlyMap<string, string>;
 
 /**
@@ -29,6 +34,11 @@ const CROSS_NAME_ALIASES: Readonly<Record<string, readonly string[]>> = {
   surprised: ['surprise'],
   blinkleft: ['blink_l'],
   blinkright: ['blink_r'],
+  // ARKit-style independent channels: the morph may be authored under the
+  // common Blender/ARKit spelling instead of the camelCase channel name.
+  nosewrinkle: ['nosesneer'],
+  lippress: ['mouthpress'],
+  cheekraise: ['cheeksquint'],
 };
 
 /** Index actual expression names by lowercase. First spelling wins (stable). */
@@ -66,4 +76,17 @@ export function isBlinkExpression(name: string): boolean {
   const lower = name.toLowerCase();
   return lower === 'blink' || lower === 'blinkleft' || lower === 'blinkright'
     || lower === 'blink_l' || lower === 'blink_r';
+}
+
+/**
+ * The extra (non-preset) channels this rig can address on its own. Empty for
+ * every shipped VRoid rig — they only carry the six emotion presets — so the
+ * face-mapper falls back to exactly the old six-preset fold there.
+ */
+export function resolveExtraChannels(map: ExpressionNameMap): Set<ExtraFaceChannel> {
+  const out = new Set<ExtraFaceChannel>();
+  for (const channel of EXTRA_FACE_CHANNELS) {
+    if (resolveExpressionName(map, channel)) out.add(channel);
+  }
+  return out;
 }

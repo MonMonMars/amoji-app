@@ -38,6 +38,27 @@ export function mouthFromRms(rms: number, floor = 0.012, gain = 7): number {
   return clamp01((rms - floor) * gain);
 }
 
+/**
+ * One-pole attack/release smoothing for a mouth envelope. Raw RMS jitters
+ * frame to frame (especially on a phone speaker), so the jaw opens quickly
+ * (~45 ms) but closes more slowly (~110 ms) — a natural syllable shape, not a
+ * flicker. `dtMs` is the time since the previous sample.
+ */
+export function smoothMouth(
+  prev: number,
+  target: number,
+  dtMs: number,
+  attackMs = 45,
+  releaseMs = 110,
+): number {
+  const p = clamp01(Number.isFinite(prev) ? prev : 0);
+  const t = clamp01(Number.isFinite(target) ? target : 0);
+  const tc = t > p ? attackMs : releaseMs;
+  const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
+  const alpha = 1 - Math.exp(-dt / Math.max(1, tc));
+  return clamp01(p + (t - p) * alpha);
+}
+
 /** Read one analyser frame; returns zero when the analyser is unavailable. */
 export function readAnalyserRms(an: AnalyserLike | null, buf: Float32Array<ArrayBuffer>): number {
   if (!an || typeof an.getFloatTimeDomainData !== 'function') return 0;

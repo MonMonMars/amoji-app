@@ -1,8 +1,35 @@
 import type { EmotionFrame } from '@amoji/emotion-core';
 import type { IdlePoseOffsets } from './idle-poses.js';
 
+/**
+ * ARKit-style face params that can be driven as their OWN VRM expression when
+ * the loaded rig actually ships the morph, instead of being folded into one of
+ * the six semantic presets. Every shipped VRoid rig only carries the six
+ * presets, so this path is dormant there; a rig that authors `BrowInnerUp`,
+ * `NoseSneer`, `MouthPress` or `CheekSquint` gets independent brows/lips.
+ */
+export type ExtraFaceChannel =
+  | 'browInnerUp' | 'browOuterUp' | 'browDown'
+  | 'noseWrinkle' | 'lipPress' | 'mouthStretch' | 'mouthPucker' | 'cheekRaise';
+
+export const EXTRA_FACE_CHANNELS: readonly ExtraFaceChannel[] = [
+  'browInnerUp', 'browOuterUp', 'browDown',
+  'noseWrinkle', 'lipPress', 'mouthStretch', 'mouthPucker', 'cheekRaise',
+];
+
+export interface VrmMapOptions {
+  /**
+   * Channels this rig can address directly. Their contribution is REMOVED from
+   * the preset fold (so the face is not driven twice) and emitted in `extra`.
+   * Omit it and the output is byte-identical to the six-preset behaviour.
+   */
+  extraChannels?: Iterable<ExtraFaceChannel>;
+}
+
 export interface VrmTargets {
   blendShape: { joy: number; angry: number; sorrow: number; fun: number; surprise: number; relaxed: number };
+  /** Additional independent targets — only for channels the rig actually has. */
+  extra?: Partial<Record<ExtraFaceChannel, number>>;
   bones: {
     headPitch: number; headYaw: number; headRoll: number;
     /** arm lowering from T-pose, radians (positive = lower toward body) */
@@ -25,19 +52,39 @@ export const ELBOW_BASE = 0.16;
 /** how strongly an idle pose drags head yaw toward its target */
 const POSE_HEAD_YAW_MIX = 0.35;
 
-export function mapFrameToVrm(frame: EmotionFrame, intensity = 1, pose?: IdlePoseOffsets): VrmTargets {
+export function mapFrameToVrm(
+  frame: EmotionFrame,
+  intensity = 1,
+  pose?: IdlePoseOffsets,
+  opts?: VrmMapOptions,
+): VrmTargets {
   const k = clamp01(intensity);
   const f = frame.face;
   const p = pose;
+  // A channel the rig can address on its own is taken OUT of the preset fold;
+  // otherwise its weight would be driven twice (once in the preset, once as
+  // the extra target). No opts → the original six-preset maths, untouched.
+  const direct = opts?.extraChannels ? new Set<ExtraFaceChannel>(opts.extraChannels) : null;
+  const folded = (channel: ExtraFaceChannel, weight: number): number => (
+    direct?.has(channel) ? 0 : weight
+  );
   // weighted mix into the six VRM preset blend shapes
-  const joyW = clamp01(f.mouthSmile * 0.7 + f.cheekRaise * 0.3);
-  const funW = clamp01(f.cheekRaise * 0.5 + f.mouthSmile * 0.5 + f.jawDrop * 0.2);
-  const sorrowW = clamp01(f.mouthFrown * 0.7 + f.browInnerUp * 0.3 + f.lidClosure * 0.2);
-  const angryW = clamp01(f.browDown * 0.7 + f.lipPress * 0.2 + f.noseWrinkle * 0.2);
+  const joyW = clamp01(f.mouthSmile * 0.7 + folded('cheekRaise', f.cheekRaise * 0.3));
+  const funW = clamp01(folded('cheekRaise', f.cheekRaise * 0.5) + f.mouthSmile * 0.5 + f.jawDrop * 0.2);
+  const sorrowW = clamp01(f.mouthFrown * 0.7 + folded('browInnerUp', f.browInnerUp * 0.3) + f.lidClosure * 0.2);
+  const angryW = clamp01(
+    folded('browDown', f.browDown * 0.7)
+    + folded('lipPress', f.lipPress * 0.2)
+    + folded('noseWrinkle', f.noseWrinkle * 0.2),
+  );
   // Eye-wide + brows only — jawDrop used to hitch surprise to mouth open and
   // flicker eye size whenever the face talked or dropped the jaw.
-  const surpriseW = clamp01(f.eyeWide * 0.75 + f.browOuterUp * 0.25);
-  const relaxedW = clamp01(f.lidClosure * 0.4 + f.mouthPucker * 0.3 + (1 - f.mouthOpen) * 0.2);
+  const surpriseW = clamp01(f.eyeWide * 0.75 + folded('browOuterUp', f.browOuterUp * 0.25));
+  const relaxedW = clamp01(
+    f.lidClosure * 0.4
+    + folded('mouthPucker', f.mouthPucker * 0.3)
+    + (1 - f.mouthOpen) * 0.2,
+  );
 
   // ---- body: T-pose fix + idle life (breath, sway, lean) + idle pose ----
   const tt = frame.t / 1000;
@@ -72,11 +119,19 @@ export function mapFrameToVrm(frame: EmotionFrame, intensity = 1, pose?: IdlePos
   const mappedYaw = clamp(frame.body.headYaw + frame.gaze.x * 0.3, -0.6, 0.6) * k;
   const headYaw = p ? clamp(mappedYaw * (1 - POSE_HEAD_YAW_MIX) + p.headYaw * POSE_HEAD_YAW_MIX, -0.6, 0.6) : mappedYaw;
 
+  const extra: Partial<Record<ExtraFaceChannel, number>> = {};
+  if (direct) {
+    for (const channel of EXTRA_FACE_CHANNELS) {
+      if (direct.has(channel)) extra[channel] = clamp01(f[channel]) * k;
+    }
+  }
+
   return {
     blendShape: {
       joy: joyW * k, fun: funW * k, sorrow: sorrowW * k,
       angry: angryW * k, surprise: surpriseW * k, relaxed: relaxedW * k,
     },
+    extra,
     bones: {
       headPitch: clamp(frame.body.headPitch + frame.gaze.y * 0.15, -0.35, 0.35) * k,
       headYaw,
