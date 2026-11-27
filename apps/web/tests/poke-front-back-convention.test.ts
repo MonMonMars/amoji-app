@@ -78,12 +78,16 @@ function classify(hit: { x: number; y: number; z: number }, camera: typeof CAMER
  * punch travel, then the single axial decision, then the tier reaction.
  * (A centred tap takes the `cls.impulse` branch: no finger-offset blend.)
  */
-function bodyFor(hit: { x: number; y: number; z: number }, camera: typeof CAMERA_FRONT) {
+function bodyFor(
+  hit: { x: number; y: number; z: number },
+  camera: typeof CAMERA_FRONT,
+  t = 0.1,
+) {
   const cls = classify(hit, camera);
   const bodyFall = axialRecoilFall({ x: cls.impulse.x, z: cls.impulse.z }, cls.zone);
   const section = resolvePokeSection(cls.zone, cls.direction);
   const body = pokeSectionBodyReaction({
-    t: 0.1,
+    t,
     section,
     hitZone: cls.zone,
     fallX: bodyFall.x,
@@ -204,6 +208,65 @@ describe('front/back lean: away from the camera on the front, toward it on the b
     const posed = worldZ(avatar, body);
     expect(posed.chest.z).toBeGreaterThan(rest.z + 0.02);
     expect(posed.head.z).toBeGreaterThan(0.06);
+  });
+
+  /**
+   * THE owner invariant (2026-11-26): "the front and back should mirror the poke
+   * move." A front poke and a back poke are one movement reflected through her
+   * lateral (XY) plane — same amplitude, same spring shape, opposite forward
+   * sign. Asserting a hard-coded sign only (the old test) let the two sides
+   * drift apart by ~20% in magnitude on a separately tuned recipe.
+   *
+   * Axial components (forward/back pitch + Z shift + arm swing) must negate;
+   * lateral and guard components (roll, yaw, X shift, elbows) must be equal —
+   * the arms are in the same guard, they just swing the other way.
+   */
+  it('is an exact mirror at every point of the punch: axial negates, lateral holds', () => {
+    const axial = ['spinePitch', 'chestPitch', 'headX', 'hipPitch', 'hipShiftZ', 'lArmX', 'rArmX'] as const;
+    const lateral = ['spineYaw', 'chestRoll', 'headZ', 'hipRoll', 'hipShiftX', 'lElbowZ', 'rElbowZ', 'lArmUp', 'rArmUp'] as const;
+    for (const t of [0, 0.05, 0.1, 0.2, 0.35, 0.5, 0.55, 0.8, 1, 1.2]) {
+      const front = bodyFor(FRONT_CONTACT, CAMERA_FRONT, t).body;
+      const back = bodyFor(BACK_CONTACT, CAMERA_BACK, t).body;
+      for (const key of axial) {
+        // Same magnitude, opposite sign — exact, not "close enough at 2dp".
+        expect(front[key], `${key} t=${t}`).toBeCloseTo(-back[key], 12);
+        expect(Math.abs(front[key]), `${key} magnitude t=${t}`).toBeCloseTo(Math.abs(back[key]), 12);
+      }
+      for (const key of lateral) {
+        expect(front[key], `${key} t=${t}`).toBeCloseTo(back[key], 12);
+      }
+    }
+  });
+
+  it('is a mirror in the rig too: the chest and head travel equal and opposite on Z', async () => {
+    const avatar = await loadAvatar();
+    avatar.update(0);
+    const restChest = avatar.getBoneNode('chest')!.getWorldPosition(new THREE.Vector3());
+    const restHead = avatar.getBoneNode('head')!.getWorldPosition(new THREE.Vector3());
+    // Sign is only meaningful inside the punch (by t≈0.35 the rebound has
+    // already crossed the rest pose); the mirror sum holds at every sample.
+    for (const t of [0.05, 0.1, 0.2, 0.35]) {
+      const front = worldZ(avatar, bodyFor(FRONT_CONTACT, CAMERA_FRONT, t).body);
+      const back = worldZ(avatar, bodyFor(BACK_CONTACT, CAMERA_BACK, t).body);
+      const frontDz = front.chest.z - restChest.z;
+      const backDz = back.chest.z - restChest.z;
+      if (t <= 0.2) {
+        expect(frontDz, `chest z t=${t}`).toBeLessThan(0);
+        expect(backDz, `chest z t=${t}`).toBeGreaterThan(0);
+      }
+      // Chest: the two displacements cancel to a fraction of a millimetre.
+      expect(Math.abs(frontDz + backDz), `chest mirror t=${t}`).toBeLessThan(0.001);
+      const frontHeadDz = front.head.z - restHead.z;
+      const backHeadDz = back.head.z - restHead.z;
+      expect(Math.sign(frontHeadDz), `head sign t=${t}`).toBe(-Math.sign(backHeadDz));
+      // Head: same travel to within ~3% — the rig's rest chain (neck/head bone
+      // offsets) is not Z-symmetric, so the accumulated rotations leave under a
+      // centimetre of residual on a 1.3 m avatar. The old recipes differed by 20%.
+      expect(
+        Math.abs(frontHeadDz + backHeadDz),
+        `head mirror t=${t}`,
+      ).toBeLessThan(Math.abs(frontHeadDz) * 0.05 + 0.001);
+    }
   });
 
   it('is a single sign on Z: same magnitude, opposite sign, whatever the zone', () => {
