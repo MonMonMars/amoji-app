@@ -9,7 +9,7 @@ Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, t
 
 ## Priority now — the r2026-11-24.311 landing (#607 + #608 + #609 + #610)
 
-Landed 2026-11-26, on `main` at `r2026-11-24.311`. None of these are phone-confirmed yet — tick them on the live Pages build, never from CI green.
+Landed 2026-11-26/27 (the poke fix cut last), on `main` at `r2026-11-24.311`. None of these are phone-confirmed yet — tick them on the live Pages build, never from CI green.
 
 ### 0. Change Character renders, and the gate returns to it (#608)
 
@@ -35,7 +35,7 @@ Owner: a time question toured the world (“Hong Kong … Tokyo … London … N
 
 ## Priority now — the r305–r310 landing (owner reports of 2026-11-25/26)
 
-Verified on the local build (`http://127.0.0.1:4173` → `revision.txt` = `r2026-11-24.311`) with the rig readout at `/chat?bones=1`. None of these are phone-confirmed yet.
+Verified on the local build (`http://127.0.0.1:4173` → `revision.txt` = `r2026-11-24.310`) with the rig readout at `/chat?bones=1`. None of these are phone-confirmed yet.
 
 ### 0. Left arm no longer blends into the body (r2026-11-24.310)
 
