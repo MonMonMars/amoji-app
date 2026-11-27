@@ -1,15 +1,41 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-24.310` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
-**Purpose:** Human-only checks after #419–#437 + #458 + r271–r310. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
+**Tip on main:** `r2026-11-24.311` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Purpose:** Human-only checks after #419–#437 + #458 + #607–#610 + r271–r311. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
 Tick on a real phone (prefer iPhone Safari). **Mandatory once:** hard refresh, tap **Refresh** on the “Update ready” chip if shown, or remove home-screen icon and re-add so the service worker picks up the current **`APP_REVISION`** cache (stale shells hid recent fixes). Then idle prefs **v6** (`IdleQuaterniusHuman` default — not RPM F) and voice sink land.
 
+## Priority now — the r2026-11-24.311 landing (#607 + #608 + #609 + #610)
+
+Landed 2026-11-26, on `main` at `r2026-11-24.311`. None of these are phone-confirmed yet — tick them on the live Pages build, never from CI green.
+
+### 0. Change Character renders, and the gate returns to it (#608)
+
+Owner: entering Change Character dropped back to the title screen. `RequireEntryGate` never passed `onDone`, so the in-place audio gate in `QuickSetup` fell through to the standalone funnel's `/` and threw away the guarded route. `audioGateNextPath()` now returns the guarded pathname (`/change`, `/select`, `/chat`) when the gate runs in place; `/setup` and `/gate` keep their documented `/` funnel.
+
+- [ ] Open **`/change`** directly by URL (not by navigating from the home screen): does the character grid render, or do you land on the title / splash screen?
+- [ ] If an entry or audio gate appears first, finish it: do you come back to **Change Character** (not `/`)?
+- [ ] Tap a **different character**: does the selection apply, and is the page still usable afterwards (grid tappable, no bounce to `/`)?
+- [ ] Open **`/select`** and **`/chat`** directly the same way: do they also return in place? (the fix is shared, not `/change`-only)
+- [ ] Report: `ROW: change-page DEVICE: <model>` + renders / title-bounce / gate-returns-to-root / selection-dead / ok
+
+### 1. Time question: local time only, with an in-app location ask (#607)
+
+Owner: a time question toured the world (“Hong Kong … Tokyo … London … New York”), and the browser location popup fired with no warning. The Time chip now answers through `spokenWorldClock()` → `spokenLocalClock()`: part of day + time rounded to five minutes, never a city name and never an `HH:MM` colon string. Before any `navigator.geolocation`, chat shows an in-app consent card (`time-geo-ask`) with **Allow** / **Skip**. `timeLocationGate()` asks only on a fresh tab (permission `prompt` / `unknown`, no cached browser fix, not already answered or denied this tab); Skip answers from the device zone, Allow fires one coarse fix with a 1.5 s ceiling and the answer never waits longer than that.
+
+- [ ] Tap the **Time** chip (「而家幾點？」): does an in-app card with **Allow** / **Skip** appear **before** any browser location popup?
+- [ ] Ask it in **English** (“what time is it right now?”): same card, same order (card first, browser popup only after Allow)?
+- [ ] Tap **Allow**: does she speak **only the local time** — no Hong Kong / Tokyo / London / New York list?
+- [ ] Tap **Skip**: does she still answer from the device time zone, with no error and no second ask?
+- [ ] Does the browser's own geolocation popup appear **at most once** — not again on the next Time tap in the same tab, or after Skip?
+- [ ] Does the spoken time sound natural (「你而家大約夜晚十一點半。」 / “Where you are it's about half past eleven at night.”), not raw digits like “00 31”?
+- [ ] Report: `ROW: time-local DEVICE: <model>` + city-tour / digits / no-card / popup-twice / silent-on-skip / ok
+
 ## Priority now — the r305–r310 landing (owner reports of 2026-11-25/26)
 
-Verified on the local build (`http://127.0.0.1:4173` → `revision.txt` = `r2026-11-24.310`) with the rig readout at `/chat?bones=1`. None of these are phone-confirmed yet.
+Verified on the local build (`http://127.0.0.1:4173` → `revision.txt` = `r2026-11-24.311`) with the rig readout at `/chat?bones=1`. None of these are phone-confirmed yet.
 
 ### 0. Left arm no longer blends into the body (r2026-11-24.310)
 
@@ -66,7 +92,7 @@ Owner: “the news now still too short … say the day of the news rather than s
 - [ ] Does it say a **day** (今日 / 琴日 / 禮拜二 / a date) rather than 最近?
 - [ ] Is anything said **twice**, or is there a lone 1-character fragment?
 - [ ] Does unrelated chatter (the flower line) follow the news read?
-- [ ] Report: `ROW: news-310 DEVICE: <model>` + title-only / 最近 / repeated / lone-char / chatter / ok
+- [ ] Report: `ROW: news-311 DEVICE: <model>` + title-only / 最近 / repeated / lone-char / chatter / ok
 
 ### 6. Music press plays a real track, and the gate sample can be stopped
 
@@ -160,6 +186,18 @@ The axial lean was inverted: a poke from the **front** made her recoil **backwar
 - [ ] Poke **screen-left**, then **screen-right** — those must be unchanged (she still leans to that same side)
 - [ ] Does the **impact sound** still land the same instant as the recoil?
 - [ ] Report: `ROW: poke-frontback DEVICE: <model>` + toward / away, and which of the four directions is wrong
+
+#### Poke front/back mirror + reaction always audible (r2026-11-24.311)
+
+The r290 rows above still hold (which way she tips). Two things changed on top of them. **(a)** Front and back used to be two different recipes — separate `fromBack` gains (chest spine 0.64 vs 0.6, chest 0.34 vs 0.68, arm 0.34 vs 0.42) and its own spring kind for `back` — so the same tap from behind was quieter and stiffer. They now share one recipe (`back` is the `chest` twin) and differ only in the sign decided once in `axialRecoilFall()`, which is what makes them true mirrors. **(b)** The performance-bed gate in `speak()` dropped any line that was not `resumable`, and a poke reaction is a hard cut (never resumable) — so a poke while the bed flag was set could be swallowed; and `loadingFillerKind()` dropped bare interjections (呵 / ふっ / “Heh”), which left some poke banks silent. Poke reactions now carry `mustBeHeard` (the bed ends first), and `pokeBurstSpokenLine()` steps past filler entries to a line TTS actually speaks.
+
+- [ ] Poke her **front** on the chest, then the **same band from behind**: is the lean the **same size in opposite directions** (mirror), rather than one much stronger or stiffer than the other?
+- [ ] Does the back poke flinch the **arms and hips** like the front one (same recipe, mirrored sign), not a smaller, differently-shaped move?
+- [ ] Is the poke reaction **audible on every poke** — she actually says something, not silence?
+- [ ] Pick a character whose poke bank is a bare interjection (呵 / ふっ / “Heh”) and poke it: does she step to a line she can speak, instead of going silent?
+- [ ] Start a **song**, then poke: is the reaction **heard** — bed ends first, impact then words (not swallowed by the music)?
+- [ ] Poke **repeatedly**: one impact at a time, no stacked reactions or double sound over the bed?
+- [ ] Report: `ROW: poke-mirror-sound DEVICE: <model>` + front-stronger / back-stiffer / silent-poke / filler-character-silent / swallowed-by-bed / ok
 
 ### 2. Chat voice — intermittent silence (r290)
 
