@@ -18,12 +18,43 @@
 // module via a re-export shim — the B2C app and the B2B SDK cannot drift.
 // v2: look direction, voice-level lipsync, multi-emotion hint blending,
 //     blinks, and the Http/Unitree drivers — all in the package.
+// v3 (this file): a first-class expression *state* model. Every emotion in
+//     @amoji/emotion-core plus the transient robot states (idle/listening/
+//     thinking/speaking/sleeping/greeting) has its own drawable look: eye
+//     scale + slant, lid opening, pupil offset/dilation, brow tilt/raise/
+//     asymmetry, mouth curve/openness/pucker, blush, and a primary/secondary
+//     colour pair. Transitions cross-fade in 160 ms (120–200 ms window) and
+//     strong emotions punch in with the same envelope shape as the app's
+//     lib/emotion-presentation.ts. Nothing here touches the VRM path.
 // ─────────────────────────────────────────────────────────────────────────────
-import { analyzeText } from '@amoji/emotion-core';
+import { analyzeText, EMOTION_IDS } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
 
-export { analyzeText };
+export { analyzeText, EMOTION_IDS };
 export type { EmotionId };
+
+// ── expression state model ──────────────────────────────────────────────────
+// A 2D face draws every shape, so unlike the shipped VRM rigs (6 presets,
+// 5 visemes, no brow/lip/cheek morphs) it can express all 19 catalog
+// emotions. The table below is the single place to tune a look.
+
+export const TRANSIENT_FACE_STATES = [
+  'idle',
+  'listening',
+  'thinking',
+  'speaking',
+  'sleeping',
+  'greeting',
+] as const;
+
+export type TransientFaceState = (typeof TRANSIENT_FACE_STATES)[number];
+export type ExpressionState = EmotionId | TransientFaceState;
+
+/** All drawable states — transient robot states first, then catalog emotions. */
+export const EXPRESSION_STATES: readonly ExpressionState[] = [
+  ...TRANSIENT_FACE_STATES,
+  ...EMOTION_IDS,
+];
 
 export interface FaceParams {
   eyeW: number;   // eye width scale
@@ -33,52 +64,294 @@ export interface FaceParams {
   open: number;   // mouth openness 0..1
   r: number; g: number; b: number; // glow color
   bounce: number; // idle bob amplitude 0..1
+  // v3 expression channels. Optional so a hand-built FaceParams object from an
+  // older SDK version still compiles; every renderer resolves them to a
+  // default before drawing.
+  eyeSlant?: number;   // −1 outer corner down .. 1 outer corner up
+  pupilX?: number;     // pupil offset −1 .. 1
+  pupilY?: number;     // pupil offset −1 .. 1
+  browTilt?: number;   // −1 inner down (anger) .. 1 inner up (sad/worried)
+  browRaise?: number;  // 0 .. 1 both brows up
+  browAsym?: number;   // −1 left brow up .. 1 right brow up (confusion)
+  pucker?: number;     // 0 .. 1 narrower/rounder mouth
+  blush?: number;      // 0 .. 1 cheek tint from the secondary colour
+  r2?: number; g2?: number; b2?: number; // secondary colour (pupil/blush)
 }
 
-export const NEUTRAL: FaceParams = {
-  eyeW: 1, eyeH: 0.8, pupil: 0.5, smile: 0.15, open: 0.1,
-  r: 140, g: 220, b: 220, bounce: 0.12,
+/** Every channel is required once resolved — safe to index and blend. */
+export type FaceLook = Required<FaceParams>;
+
+export type FaceRgb = readonly [number, number, number];
+
+export const NEUTRAL: FaceLook = {
+  eyeW: 1, eyeH: 0.8, eyeSlant: 0, pupil: 0.5, pupilX: 0, pupilY: 0,
+  browTilt: 0, browRaise: 0, browAsym: 0,
+  smile: 0.15, open: 0.1, pucker: 0, blush: 0,
+  r: 140, g: 220, b: 220,
+  r2: 255, g2: 255, b2: 255,
+  bounce: 0.12,
 };
 
-const EMOTION_PARAMS: Record<string, Partial<FaceParams>> = {
-  joy:         { eyeH: 1.0, smile: 1, open: 0.3, r: 255, g: 200, b: 80, bounce: 0.4 },
-  excitement:  { eyeH: 1.1, smile: 1, open: 0.7, r: 255, g: 170, b: 60, bounce: 0.9 },
-  love:        { eyeH: 0.75, smile: 0.9, open: 0.2, r: 255, g: 120, b: 170, bounce: 0.3 },
-  contentment: { eyeH: 0.7, smile: 0.6, open: 0.1, r: 120, g: 220, b: 160, bounce: 0.1 },
-  pride:       { eyeH: 0.85, smile: 0.8, open: 0.25, r: 255, g: 210, b: 90, bounce: 0.5 },
-  surprise:    { eyeH: 1.2, smile: 0.2, open: 0.8, r: 120, g: 220, b: 255, bounce: 0.5 },
-  confusion:   { eyeH: 0.9, smile: -0.1, open: 0.2, r: 170, g: 170, b: 255, bounce: 0.15 },
-  sadness:     { eyeH: 0.45, smile: -0.6, open: 0.1, r: 90, g: 140, b: 255, bounce: 0 },
-  anger:       { eyeH: 0.5, smile: -0.9, open: 0.3, r: 255, g: 80, b: 70, bounce: 0.2 },
-  fear:        { eyeH: 1.1, smile: -0.3, open: 0.5, r: 170, g: 120, b: 255, bounce: 0.6 },
-  neutral:     {},
+export const FACE_CHANNEL_KEYS = [
+  'eyeW', 'eyeH', 'eyeSlant', 'pupil', 'pupilX', 'pupilY',
+  'browTilt', 'browRaise', 'browAsym', 'smile', 'open', 'pucker', 'blush',
+  'r', 'g', 'b', 'r2', 'g2', 'b2', 'bounce',
+] as const satisfies readonly (keyof FaceLook)[];
+
+type FaceChannelKey = (typeof FACE_CHANNEL_KEYS)[number];
+
+/** Valid range per channel. Colours are 0..255; geometry stays unit-scaled. */
+export const FACE_CHANNEL_RANGE: Record<FaceChannelKey, readonly [number, number]> = {
+  eyeW: [0.2, 2], eyeH: [0, 1.2], eyeSlant: [-1, 1],
+  pupil: [0, 1], pupilX: [-1, 1], pupilY: [-1, 1],
+  browTilt: [-1, 1], browRaise: [0, 1], browAsym: [-1, 1],
+  smile: [-1, 1], open: [0, 1.2], pucker: [0, 1], blush: [0, 1],
+  r: [0, 255], g: [0, 255], b: [0, 255],
+  r2: [0, 255], g2: [0, 255], b2: [0, 255],
+  bounce: [0, 1],
 };
+
+const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
+const smoothstep = (x: number): number => {
+  const c = clamp01(x);
+  return c * c * (3 - 2 * c);
+};
+const clock = (): number =>
+  (typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now());
+const roundRgb = (v: number): number => Math.round(clamp(v, 0, 255));
+
+/** Resolve optional v3 channels (and any NaN from a caller) into a full look. */
+export function resolveFaceParams(p: FaceParams): FaceLook {
+  const out = {} as FaceLook;
+  for (const key of FACE_CHANNEL_KEYS) {
+    const raw = p[key];
+    const fallback = NEUTRAL[key];
+    out[key] = typeof raw === 'number' && Number.isFinite(raw) ? raw : fallback;
+  }
+  return clampFaceLook(out);
+}
+
+function clampFaceLook(p: FaceLook): FaceLook {
+  const out = {} as FaceLook;
+  for (const key of FACE_CHANNEL_KEYS) {
+    const raw = p[key];
+    const [lo, hi] = FACE_CHANNEL_RANGE[key];
+    const v = Number.isFinite(raw) ? raw : NEUTRAL[key];
+    out[key] = clamp(v, lo, hi);
+  }
+  return out;
+}
+
+/** Linear cross-fade between two looks. `t` is clamped to 0..1 (NaN → 0). */
+export function mixFaceLook(a: FaceLook, b: FaceLook, t: number): FaceLook {
+  const u = clamp01(Number.isFinite(t) ? t : 0);
+  const out = {} as FaceLook;
+  for (const key of FACE_CHANNEL_KEYS) {
+    out[key] = a[key] + (b[key] - a[key]) * u;
+  }
+  return clampFaceLook(out);
+}
+
+/** Overshoot a look away from neutral (punch gain can exceed 1). */
+function applyFaceGain(base: FaceLook, gain: number): FaceLook {
+  const g = Number.isFinite(gain) ? Math.max(0, gain) : 1;
+  const out = {} as FaceLook;
+  for (const key of FACE_CHANNEL_KEYS) {
+    out[key] = NEUTRAL[key] + (base[key] - NEUTRAL[key]) * g;
+  }
+  return clampFaceLook(out);
+}
+
+/** Public blend of two FaceParams (partial v3 fields resolved first). */
+export function blendFaceParams(a: FaceParams, b: FaceParams, t: number): FaceLook {
+  return mixFaceLook(resolveFaceParams(a), resolveFaceParams(b), t);
+}
+
+// ── the per-state look table ────────────────────────────────────────────────
+// Reused from the original 10-emotion palette: joy/excitement warm yellow,
+// love pink, contentment/relief green, pride gold, surprise/fear cool violet,
+// confusion periwinkle, sadness blue, anger red. The eight emotions that used
+// to fall through to neutral now get their own hue inside those families.
+
+const WHITE_CORE: FaceRgb = [255, 255, 255];
+
+const look = (over: Partial<FaceLook>, primary: FaceRgb, secondary: FaceRgb = WHITE_CORE): FaceLook =>
+  clampFaceLook({
+    ...NEUTRAL,
+    ...over,
+    r: primary[0], g: primary[1], b: primary[2],
+    r2: secondary[0], g2: secondary[1], b2: secondary[2],
+  });
+
+export const FACE_STATES: Record<ExpressionState, FaceLook> = {
+  neutral: NEUTRAL,
+
+  // ── transient robot states ────────────────────────────────────────────────
+  idle: look(
+    { eyeH: 0.78, pupil: 0.45, smile: 0.1, bounce: 0.1 },
+    [120, 200, 205],
+  ),
+  listening: look(
+    { eyeH: 0.95, pupil: 0.7, pupilY: -0.1, browRaise: 0.25, smile: 0.2, open: 0.08, bounce: 0.08 },
+    [130, 210, 255], [210, 240, 255],
+  ),
+  thinking: look(
+    {
+      eyeH: 0.5, eyeSlant: 0.15, pupil: 0.6, pupilX: 0.55, pupilY: -0.35,
+      browTilt: 0.2, browAsym: 0.6, smile: -0.05, open: 0.06, bounce: 0.05,
+    },
+    [160, 170, 220], [225, 225, 255],
+  ),
+  speaking: look(
+    { eyeH: 0.85, pupil: 0.55, smile: 0.25, open: 0.2, bounce: 0.16 },
+    [150, 225, 225],
+  ),
+  sleeping: look(
+    { eyeH: 0.06, pupil: 0, smile: 0.05, open: 0.04, bounce: 0.02 },
+    [70, 110, 160], [150, 180, 220],
+  ),
+  greeting: look(
+    { eyeH: 1.05, smile: 0.8, open: 0.25, browRaise: 0.35, blush: 0.18, bounce: 0.5 },
+    [255, 210, 110], [255, 245, 200],
+  ),
+
+  // ── catalog emotions ──────────────────────────────────────────────────────
+  joy: look(
+    { eyeH: 1, smile: 1, open: 0.3, browRaise: 0.1, blush: 0.12, bounce: 0.4 },
+    [255, 200, 80], [255, 240, 190],
+  ),
+  excitement: look(
+    { eyeH: 1.1, smile: 1, open: 0.7, browRaise: 0.6, blush: 0.15, pupil: 0.8, bounce: 0.9 },
+    [255, 170, 60], [255, 230, 170],
+  ),
+  love: look(
+    { eyeH: 0.75, smile: 0.9, open: 0.2, browTilt: 0.25, blush: 0.55, pupil: 0.6, bounce: 0.3 },
+    [255, 120, 170], [255, 190, 215],
+  ),
+  contentment: look(
+    { eyeH: 0.7, smile: 0.6, open: 0.1, browTilt: 0.15, blush: 0.2, pupil: 0.45, bounce: 0.1 },
+    [120, 220, 160], [205, 245, 220],
+  ),
+  pride: look(
+    { eyeH: 0.85, smile: 0.8, open: 0.25, browRaise: 0.25, pupilY: -0.15, browTilt: -0.1, bounce: 0.5 },
+    [255, 210, 90], [255, 240, 180],
+  ),
+  surprise: look(
+    { eyeH: 1.2, smile: 0.2, open: 0.8, browRaise: 1, browTilt: 0.15, pupil: 0.75, bounce: 0.5 },
+    [120, 220, 255], [220, 245, 255],
+  ),
+  confusion: look(
+    { eyeH: 0.9, smile: -0.1, open: 0.2, browAsym: 1, browTilt: 0.25, pupilX: 0.4, pupilY: -0.25, bounce: 0.15 },
+    [170, 170, 255], [225, 225, 255],
+  ),
+  sadness: look(
+    { eyeH: 0.45, smile: -0.6, open: 0.1, browTilt: 0.85, pupilY: 0.25, bounce: 0 },
+    [90, 140, 255], [190, 215, 255],
+  ),
+  anger: look(
+    { eyeH: 0.5, smile: -0.9, open: 0.2, browTilt: -1, pupil: 0.35, blush: 0.05, bounce: 0.2 },
+    [255, 80, 70], [255, 180, 120],
+  ),
+  fear: look(
+    { eyeH: 1.15, smile: -0.3, open: 0.5, browTilt: 0.7, browRaise: 0.9, pupil: 0.8, pupilY: -0.1, bounce: 0.6 },
+    [170, 120, 255], [220, 200, 255],
+  ),
+  disgust: look(
+    { eyeH: 0.55, eyeSlant: -0.15, smile: -0.65, open: 0.08, browTilt: -0.35, browAsym: 0.35, pupil: 0.35, bounce: 0.05 },
+    [150, 190, 90], [220, 235, 180],
+  ),
+  embarrassment: look(
+    {
+      eyeH: 0.6, smile: 0.25, open: 0.12, browTilt: 0.45, browAsym: 0.2,
+      pupil: 0.55, pupilX: 0.35, pupilY: 0.25, blush: 0.8, bounce: 0.05,
+    },
+    [255, 150, 170], [255, 205, 215],
+  ),
+  shame: look(
+    {
+      eyeH: 0.35, smile: -0.35, open: 0.08, browTilt: 0.8, pupil: 0.4,
+      pupilX: -0.2, pupilY: 0.45, blush: 0.3, bounce: 0,
+    },
+    [130, 120, 200], [205, 195, 245],
+  ),
+  boredom: look(
+    {
+      eyeH: 0.3, eyeSlant: -0.1, smile: -0.15, open: 0.06, browTilt: 0.1,
+      pupil: 0.4, pupilX: 0.5, pupilY: 0.15, bounce: 0.02,
+    },
+    [110, 140, 160], [180, 200, 215],
+  ),
+  jealousy: look(
+    { eyeH: 0.45, smile: -0.4, open: 0.1, browTilt: -0.5, browAsym: 0.3, pupil: 0.45, blush: 0.1, bounce: 0.15 },
+    [110, 180, 110], [200, 235, 190],
+  ),
+  guilt: look(
+    {
+      eyeH: 0.5, smile: -0.3, open: 0.08, browTilt: 0.75, pupil: 0.45,
+      pupilX: -0.25, pupilY: 0.4, blush: 0.22, bounce: 0.02,
+    },
+    [140, 130, 210], [210, 200, 245],
+  ),
+  relief: look(
+    { eyeH: 0.5, smile: 0.5, open: 0.12, browTilt: 0.2, browRaise: 0.1, pupil: 0.45, blush: 0.1, bounce: 0.1 },
+    [130, 220, 190], [210, 245, 230],
+  ),
+  contempt: look(
+    {
+      eyeH: 0.55, eyeSlant: 0.2, smile: 0.3, open: 0.08, browTilt: -0.4,
+      browAsym: -0.7, pupil: 0.4, bounce: 0.08,
+    },
+    [200, 180, 120], [235, 225, 185],
+  ),
+};
+
+export function isExpressionState(name: string): name is ExpressionState {
+  return Object.prototype.hasOwnProperty.call(FACE_STATES, name);
+}
+
+/** Unknown names resolve to neutral so a robot stack cannot crash the face. */
+export function resolveExpressionState(name: string): ExpressionState {
+  return isExpressionState(name) ? name : 'neutral';
+}
+
+export interface FaceColorPair {
+  primary: [number, number, number];
+  secondary: [number, number, number];
+}
+
+/** Colour pair for a state (0..255). Every catalog emotion resolves. */
+export function faceColorsFor(state: string): FaceColorPair {
+  const s = resolveExpressionState(state);
+  const p = FACE_STATES[s];
+  return {
+    primary: [roundRgb(p.r), roundRgb(p.g), roundRgb(p.b)],
+    secondary: [roundRgb(p.r2), roundRgb(p.g2), roundRgb(p.b2)],
+  };
+}
+
+// ── emotion → params (kept source-compatible) ───────────────────────────────
 
 export function paramsForEmotion(emotion: string, intensity = 1): FaceParams {
-  return paramsForHints({ [emotion]: intensity } as Partial<Record<EmotionId, number>>);
+  const state = resolveExpressionState(emotion);
+  const k = clamp01(Number.isFinite(intensity) ? intensity : 0);
+  return { ...mixFaceLook(NEUTRAL, FACE_STATES[state], k) };
 }
 
 /** Dominant-blended face params from weighted emotion hints (top-3 averaged). */
 export function paramsForHints(hints: Partial<Record<EmotionId, number>>): FaceParams {
-  const entries = Object.entries(hints).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)).slice(0, 3);
-  let p: FaceParams = { ...NEUTRAL };
+  const entries = (Object.entries(hints) as Array<[string, number | undefined]>)
+    .filter(([id]) => isExpressionState(id))
+    .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+    .slice(0, 3);
+  let p: FaceLook = NEUTRAL;
   for (const [id, wRaw] of entries) {
-    const e = EMOTION_PARAMS[id];
-    if (!e) continue;
-    const k = Math.min(1, Math.max(0, wRaw ?? 0));
-    p = {
-      eyeW: p.eyeW,
-      pupil: p.pupil,
-      eyeH: p.eyeH + ((e.eyeH ?? p.eyeH) - p.eyeH) * k,
-      smile: p.smile + ((e.smile ?? p.smile) - p.smile) * k,
-      open: p.open + ((e.open ?? p.open) - p.open) * k,
-      r: Math.round(p.r + ((e.r ?? p.r) - p.r) * k),
-      g: Math.round(p.g + ((e.g ?? p.g) - p.g) * k),
-      b: Math.round(p.b + ((e.b ?? p.b) - p.b) * k),
-      bounce: p.bounce + ((e.bounce ?? p.bounce) - p.bounce) * k,
-    };
+    const k = clamp01(Number.isFinite(wRaw) ? (wRaw as number) : 0);
+    p = mixFaceLook(p, FACE_STATES[id as ExpressionState], k);
   }
-  return p;
+  return { ...p, r: roundRgb(p.r), g: roundRgb(p.g), b: roundRgb(p.b) };
 }
 
 export function paramsForText(text: string): FaceParams {
@@ -96,8 +369,6 @@ export interface FaceModifiers {
   level?: number;
 }
 
-const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
-
 /**
  * Pure: fold live modifiers into render params. Voice level opens the mouth
  * (never closes it below the emotion's own openness) and dilates the pupil
@@ -112,6 +383,239 @@ export function withLookAndVoice(p: FaceParams, m: FaceModifiers = {}): FacePara
   };
 }
 
+// ── mouth motion (speech-driven + deterministic fallback) ───────────────────
+
+/** Cross-fade length for a state change. 160 ms sits inside the 120–200 ms band. */
+export const STATE_BLEND_MS = 160;
+/** Matched to apps/web/lib/vocal-envelope.ts `smoothMouth` — attack/release. */
+export const MOUTH_ATTACK_MS = 45;
+export const MOUTH_RELEASE_MS = 110;
+
+/** 0 → 1 eased progress for a state cross-fade. */
+export function blendProgress(elapsedMs: number, blendMs = STATE_BLEND_MS): number {
+  const span = Math.max(1, Number.isFinite(blendMs) ? blendMs : STATE_BLEND_MS);
+  const t = Number.isFinite(elapsedMs) ? clamp01(elapsedMs / span) : 0;
+  return smoothstep(t);
+}
+
+/**
+ * One-pole attack/release smoothing for the mouth. Mirrors
+ * `smoothMouth(prev, target, dtMs, 45, 110)` in apps/web/lib/vocal-envelope.ts:
+ * the package cannot import app code, so the constants are duplicated here and
+ * kept identical by the test suite.
+ */
+export function smoothMouthLevel(prev: number, target: number, dtMs: number): number {
+  const p = clamp01(Number.isFinite(prev) ? prev : 0);
+  const t = clamp01(Number.isFinite(target) ? target : 0);
+  const tc = t > p ? MOUTH_ATTACK_MS : MOUTH_RELEASE_MS;
+  const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
+  const alpha = 1 - Math.exp(-dt / Math.max(1, tc));
+  return clamp01(p + (t - p) * alpha);
+}
+
+/**
+ * Deterministic talking fallback for when no audio analyser is available
+ * (cross-origin gTTS / speechSynthesis). Slow pseudo-syllable oscillation,
+ * bounded 0.12..0.42 — visible motion, never a flapping mouth.
+ */
+export function fallbackMouthLevel(nowMs: number): number {
+  const t = Number.isFinite(nowMs) ? nowMs : 0;
+  return clamp01(0.27 + 0.15 * Math.sin((t / 1000) * Math.PI * 2 * 3.1));
+}
+
+/**
+ * Mouth target for a frame. Real amplitude wins; while speaking without an
+ * analyser a deterministic fallback keeps the face alive; otherwise closed.
+ */
+export function talkingMouthTarget(
+  state: ExpressionState | string,
+  level: number,
+  nowMs: number,
+): number {
+  const l = clamp01(Number.isFinite(level) ? level : 0);
+  if (l > 0.02) return l;
+  return resolveExpressionState(state) === 'speaking' ? fallbackMouthLevel(nowMs) : 0;
+}
+
+// ── onset punch (mirrors apps/web/lib/emotion-presentation.ts) ──────────────
+// The package cannot import the app's presentation layer, so the envelope
+// shape and constants are mirrored exactly. The app's presenter remains the
+// owner of VRM punch; this duplicate only drives the 2D face.
+
+export interface PunchTrackerOptions {
+  /** Only an intensity at or above this punches (a mild mood still fades). */
+  threshold?: number;
+  /** Peak multiplier. 1.22 = 22% past the target. */
+  gain?: number;
+  attackMs?: number;
+  holdMs?: number;
+  settleMs?: number;
+  /** A channel cannot punch again inside this window. */
+  cooldownMs?: number;
+}
+
+/** 0 → 1 → hold → 1 → 0 envelope for a punch that started `elapsed` ms ago. */
+export function facePunchEnvelope(
+  elapsed: number,
+  attackMs: number,
+  holdMs: number,
+  settleMs: number,
+): number {
+  if (!Number.isFinite(elapsed) || elapsed < 0) return 0;
+  const attack = Math.max(1, attackMs);
+  const hold = Math.max(0, holdMs);
+  const settle = Math.max(1, settleMs);
+  if (elapsed < attack) return smoothstep(elapsed / attack);
+  if (elapsed < attack + hold) return 1;
+  if (elapsed < attack + hold + settle) {
+    return 1 - smoothstep((elapsed - attack - hold) / settle);
+  }
+  return 0;
+}
+
+export interface PunchTracker {
+  /** Call on every expression change. True when this call started a punch. */
+  update(intensity: number, nowMs: number): boolean;
+  /** Gain multiplier for this frame (1 = no punch). */
+  gain(nowMs: number): number;
+  reset(): void;
+}
+
+export function createPunchTracker(options: PunchTrackerOptions = {}): PunchTracker {
+  const threshold = options.threshold ?? 0.45;
+  const gain = Math.max(1, options.gain ?? 1.22);
+  const attackMs = options.attackMs ?? 120;
+  const holdMs = options.holdMs ?? 120;
+  const settleMs = options.settleMs ?? 200;
+  const cooldownMs = options.cooldownMs ?? 900;
+  let prevTarget = 0;
+  let punchAt = -1;
+  let lastPunchAt = -Infinity;
+
+  return {
+    update(intensity: number, nowMs: number): boolean {
+      const target = clamp01(Number.isFinite(intensity) ? intensity : 0);
+      const now = Number.isFinite(nowMs) ? nowMs : 0;
+      let started = false;
+      // Rising edge through the strength gate, and not still cooling down.
+      if (target >= threshold && prevTarget < threshold && now - lastPunchAt >= cooldownMs) {
+        punchAt = now;
+        lastPunchAt = now;
+        started = true;
+      }
+      prevTarget = target;
+      return started;
+    },
+    gain(nowMs: number): number {
+      if (punchAt < 0) return 1;
+      const now = Number.isFinite(nowMs) ? nowMs : 0;
+      const env = facePunchEnvelope(now - punchAt, attackMs, holdMs, settleMs);
+      // `elapsed === 0` is the trigger frame (env 0 by definition) — keep the
+      // punch alive there and only clear it once the envelope has run out.
+      if (env <= 0 && now > punchAt) {
+        punchAt = -1;
+        return 1;
+      }
+      return 1 + (gain - 1) * env;
+    },
+    reset(): void {
+      prevTarget = 0;
+      punchAt = -1;
+      lastPunchAt = -Infinity;
+    },
+  };
+}
+
+// ── expression blender (state → animated params) ────────────────────────────
+
+export interface ExpressionBlenderOptions extends PunchTrackerOptions {
+  /** Cross-fade length; defaults to STATE_BLEND_MS (160 ms). */
+  blendMs?: number;
+}
+
+export interface SetLookOptions {
+  nowMs?: number;
+  /** State label reported by the blender (defaults to 'neutral'). */
+  label?: ExpressionState;
+  /** Strength used for the punch gate, 0..1 (defaults to 1). */
+  intensity?: number;
+  /** Punch gate override — idle/neutral pass 0 so the next emotion can punch. */
+  punchIntensity?: number;
+}
+
+export interface ExpressionBlender {
+  /** Ease toward a catalog emotion or transient robot state. */
+  set(state: ExpressionState | string, intensity?: number, nowMs?: number): void;
+  /** Ease toward an arbitrary blended look (e.g. paramsForHints). */
+  setLook(look: FaceParams, options?: SetLookOptions): void;
+  /** Render params for this frame. Pure for a given (state, now). */
+  sample(nowMs?: number): FaceLook;
+  readonly state: ExpressionState;
+  readonly intensity: number;
+  reset(nowMs?: number): void;
+}
+
+export function createExpressionBlender(options: ExpressionBlenderOptions = {}): ExpressionBlender {
+  const blendMs = Math.max(1, options.blendMs ?? STATE_BLEND_MS);
+  const punch = createPunchTracker(options);
+  let from: FaceLook = NEUTRAL;
+  let target: FaceLook = NEUTRAL;
+  let state: ExpressionState = 'idle';
+  let intensity = 0;
+  let fromAt = 0;
+
+  const sample = (atMs?: number): FaceLook => {
+    const now = Number.isFinite(atMs) ? (atMs as number) : clock();
+    const base = mixFaceLook(from, target, blendProgress(now - fromAt, blendMs));
+    const gain = punch.gain(now);
+    return gain === 1 ? base : applyFaceGain(base, gain);
+  };
+
+  const setLook = (lookParams: FaceParams, opts: SetLookOptions = {}): void => {
+    const now = Number.isFinite(opts.nowMs) ? (opts.nowMs as number) : clock();
+    from = sample(now);
+    target = resolveFaceParams(lookParams);
+    state = opts.label ?? 'neutral';
+    intensity = clamp01(Number.isFinite(opts.intensity) ? (opts.intensity as number) : 1);
+    fromAt = now;
+    const punchStrength = Number.isFinite(opts.punchIntensity)
+      ? clamp01(opts.punchIntensity as number)
+      : intensity;
+    punch.update(punchStrength, now);
+  };
+
+  return {
+    set(stateName: ExpressionState | string, strength = 1, atMs?: number): void {
+      const k = clamp01(Number.isFinite(strength) ? strength : 0);
+      const name = resolveExpressionState(stateName);
+      const opts: SetLookOptions = {
+        label: name,
+        intensity: k,
+        punchIntensity: name === 'idle' || name === 'neutral' ? 0 : k,
+      };
+      if (Number.isFinite(atMs)) opts.nowMs = atMs as number;
+      setLook(mixFaceLook(NEUTRAL, FACE_STATES[name], k), opts);
+    },
+    setLook,
+    sample,
+    get state(): ExpressionState {
+      return state;
+    },
+    get intensity(): number {
+      return intensity;
+    },
+    reset(atMs?: number): void {
+      const now = Number.isFinite(atMs) ? (atMs as number) : clock();
+      from = NEUTRAL;
+      target = NEUTRAL;
+      state = 'idle';
+      intensity = 0;
+      fromAt = now;
+      punch.reset();
+    },
+  };
+}
+
 // ── canvas rendering (monitor / phone displays) ─────────────────────────────
 
 function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
@@ -120,42 +624,95 @@ function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
   else ctx.rect(x, y, w, h);
 }
 
+const rgba = (r: number, g: number, b: number, a: number): string =>
+  `rgba(${roundRgb(r)},${roundRgb(g)},${roundRgb(b)},${a})`;
+
 export function drawFace(
   ctx: CanvasRenderingContext2D, w: number, h: number, p: FaceParams,
   t: number, blink: number, lookX = 0, lookY = 0, level = 0,
 ): void {
-  const rp = withLookAndVoice(p, { level });
+  const rp = resolveFaceParams(withLookAndVoice(p, { level }));
   const lx = clamp(lookX, -1, 1) * w * 0.022;
   const ly = clamp(lookY, -1, 1) * h * 0.016;
   ctx.clearRect(0, 0, w, h);
   const cx = w / 2;
   const cy = h / 2;
   const bob = Math.sin(t * 2.2) * h * 0.02 * rp.bounce;
-  const color = `rgb(${rp.r},${rp.g},${rp.b})`;
-  const eyeH = Math.max(0.04, rp.eyeH * (1 - blink));
+  const color = `rgb(${roundRgb(rp.r)},${roundRgb(rp.g)},${roundRgb(rp.b)})`;
+  const pupilColor = rgba(rp.r2, rp.g2, rp.b2, 0.9);
+  const eyeH = Math.max(0, rp.eyeH * (1 - clamp01(blink)));
+  const closed = eyeH < 0.12;
   const ex = w * 0.19;
   const ey = cy - h * 0.06 + bob + ly;
   const ew = w * 0.13 * rp.eyeW;
   const eh = Math.max(2, h * 0.13 * eyeH);
+
   ctx.fillStyle = color;
   ctx.shadowColor = color;
   ctx.shadowBlur = Math.min(w, h) * 0.08;
-  rr(ctx, cx - ex - ew / 2 + lx, ey - eh / 2, ew, eh, Math.min(ew, eh) / 2);
-  ctx.fill();
-  rr(ctx, cx + ex - ew / 2 + lx, ey - eh / 2, ew, eh, Math.min(ew, eh) / 2);
-  ctx.fill();
+  // eyes — rounded lids, slanted for scorn / boredom
+  for (const sign of [-1, 1] as const) {
+    const exx = cx + sign * ex + lx;
+    if (closed) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, h * 0.012);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(exx - ew / 2, ey);
+      ctx.quadraticCurveTo(exx, ey + h * 0.012, exx + ew / 2, ey);
+      ctx.stroke();
+      continue;
+    }
+    ctx.save();
+    ctx.translate(exx, ey);
+    ctx.rotate(sign * rp.eyeSlant * 0.22);
+    rr(ctx, -ew / 2, -eh / 2, ew, eh, Math.min(ew, eh) / 2);
+    ctx.fill();
+    // pupil — bright core that slides with gaze and expression
+    const pr = Math.max(1.5, Math.min(ew * 0.45, eh * 0.45, Math.min(ew, eh) * 0.22 * (0.6 + rp.pupil * 0.8)));
+    ctx.fillStyle = pupilColor;
+    ctx.beginPath();
+    ctx.arc(rp.pupilX * ew * 0.28 + lx * 0.25, rp.pupilY * eh * 0.3 + ly * 0.25, pr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = color;
+  }
   ctx.shadowBlur = 0;
-  // pupils — bright cores that slide with gaze direction
-  const pr = Math.max(1.5, Math.min(ew, eh) * 0.22 * (0.6 + rp.pupil * 0.8));
-  const px = lx * 1.6;
-  const py = ly * 1.6;
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.beginPath();
-  ctx.arc(cx - ex + lx + px * 0.4, ey + py * 0.4, pr, 0, Math.PI * 2);
-  ctx.arc(cx + ex + lx + px * 0.4, ey + py * 0.4, pr, 0, Math.PI * 2);
-  ctx.fill();
-  // mouth — quadratic curve, smile lifts the middle up
-  const mw = w * 0.2;
+
+  // blush — secondary colour under each eye
+  if (rp.blush > 0.02) {
+    ctx.fillStyle = rgba(rp.r2, rp.g2, rp.b2, 0.14 + rp.blush * 0.32);
+    for (const sign of [-1, 1] as const) {
+      ctx.beginPath();
+      ctx.ellipse(cx + sign * ex + lx, ey + eh * 0.62, ew * 0.42, h * 0.032, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // brows — tilt is the channel the shipped VRM rigs do not have
+  const browVisible =
+    Math.abs(rp.browTilt) > 0.02 || rp.browRaise > 0.02 || Math.abs(rp.browAsym) > 0.02;
+  if (browVisible) {
+    ctx.strokeStyle = rgba(rp.r, rp.g, rp.b, 0.85);
+    ctx.lineWidth = Math.max(2, h * 0.012);
+    ctx.lineCap = 'round';
+    const browY = ey - eh / 2 - h * 0.05 - rp.browRaise * h * 0.025;
+    for (const sign of [-1, 1] as const) {
+      const innerX = cx + sign * ex + lx - sign * ew * 0.42;
+      const outerX = cx + sign * ex + lx + sign * ew * 0.42;
+      const asymLift = sign === 1 ? Math.max(0, rp.browAsym) : Math.max(0, -rp.browAsym);
+      const y = browY - asymLift * h * 0.03;
+      const innerY = y - rp.browTilt * h * 0.018;
+      const outerY = y + rp.browTilt * h * 0.018;
+      ctx.beginPath();
+      ctx.moveTo(outerX, outerY);
+      ctx.quadraticCurveTo((innerX + outerX) / 2, (innerY + outerY) / 2 - h * 0.008, innerX, innerY);
+      ctx.stroke();
+    }
+  }
+
+  // mouth — quadratic curve, smile lifts the middle up; pucker narrows it
+  const mw = w * 0.2 * (1 - 0.42 * rp.pucker);
   const my = cy + h * 0.15 + bob;
   const lift = Math.abs(rp.smile) * h * 0.045;
   ctx.strokeStyle = color;
@@ -166,9 +723,16 @@ export function drawFace(
   ctx.quadraticCurveTo(cx, my + (rp.smile >= 0 ? lift * 2 : -lift * 2), cx + mw, my);
   ctx.stroke();
   if (rp.open > 0.35) {
+    ctx.fillStyle = color;
     ctx.beginPath();
     ctx.ellipse(cx, my + lift, mw * 0.35, h * 0.03 * rp.open, 0, 0, Math.PI * 2);
     ctx.fill();
+  } else if (rp.pucker > 0.55) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, h * 0.01);
+    ctx.beginPath();
+    ctx.ellipse(cx, my, mw * 0.32, h * 0.024, 0, 0, Math.PI * 2);
+    ctx.stroke();
   }
 }
 
@@ -178,12 +742,12 @@ export const LED_SIZE = 16;
 
 /** Render face params to an RGB byte buffer (size×size×3), top-left origin. */
 export function ledFrame(p: FaceParams, t: number, size = LED_SIZE, lookX = 0, lookY = 0, level = 0): Uint8Array {
-  const rp = withLookAndVoice(p, { level });
+  const rp = resolveFaceParams(withLookAndVoice(p, { level }));
   const buf = new Uint8Array(size * size * 3);
   const set = (x: number, y: number, r: number, g: number, b: number) => {
     if (x < 0 || y < 0 || x >= size || y >= size) return;
     const i = (y * size + x) * 3;
-    buf[i] = r; buf[i + 1] = g; buf[i + 2] = b;
+    buf[i] = roundRgb(r); buf[i + 1] = roundRgb(g); buf[i + 2] = roundRgb(b);
   };
   const bobY = Math.round(Math.sin(t * 2.2) * rp.bounce);
   const lookXi = Math.round(clamp(lookX, -1, 1) * 1.5);
@@ -195,9 +759,23 @@ export function ledFrame(p: FaceParams, t: number, size = LED_SIZE, lookX = 0, l
     for (let x = 3; x <= 5; x++) set(x + lookXi, eyeY + y, rp.r, rp.g, rp.b);
     for (let x = 10; x <= 12; x++) set(x + lookXi, eyeY + y, rp.r, rp.g, rp.b);
   }
+  // brows — one row above the eyes; tilt/asymmetry shifts which pixels light
+  if (rp.browRaise > 0.15 || Math.abs(rp.browTilt) > 0.15 || Math.abs(rp.browAsym) > 0.2) {
+    const tilt = Math.round(rp.browTilt);
+    const asym = rp.browAsym > 0.2 ? -1 : rp.browAsym < -0.2 ? 1 : 0;
+    set(3 + lookXi, eyeY - 1 - tilt, rp.r, rp.g, rp.b);
+    set(5 + lookXi, eyeY - 1 + tilt, rp.r, rp.g, rp.b);
+    set(10 + lookXi, eyeY - 1 + tilt, rp.r, rp.g, rp.b);
+    set(12 + lookXi, eyeY - 1 - tilt + asym, rp.r, rp.g, rp.b);
+  }
+  // blush — dim secondary pixels under the eyes for the rosy states
+  if (rp.blush > 0.35) {
+    set(4 + lookXi, eyeY + 3, rp.r2, rp.g2, rp.b2);
+    set(11 + lookXi, eyeY + 3, rp.r2, rp.g2, rp.b2);
+  }
   // mouth
   const mY = cy + 4;
-  const half = 4;
+  const half = Math.max(2, Math.round(4 * (1 - 0.5 * rp.pucker)));
   for (let x = -half; x <= half; x++) {
     const curve = Math.round(rp.smile * (1 - Math.abs(x) / (half + 1)) * -2);
     const y = mY + (rp.smile >= 0 ? curve : -curve);
@@ -216,7 +794,7 @@ export interface FaceDriver {
   speak?(text: string): void;
 }
 
-/** POST each frame as JSON to your robot bridge (Unitree face service, ESP32, etc.). */
+/** POST each frame as JSON to your robot bridge (Unitree face service, ESP32, etc). */
 export class HttpDriver implements FaceDriver {
   constructor(private url: string, private fps = 15) {}
   private last = 0;
@@ -251,21 +829,32 @@ export interface AmojiFaceOptions {
 }
 
 export class AmojiFace {
-  private target: FaceParams = { ...NEUTRAL };
-  private cur: FaceParams = { ...NEUTRAL };
+  private expr = createExpressionBlender();
+  private cur: FaceLook = { ...NEUTRAL };
   private raf = 0;
   private t0 = 0;
   private blink = 0;
   private nextBlink = 2.5;
   private holdUntil = 0;
+  private holding = false;
+  private speakingUntil = 0;
+  private mouthLevel = 0;
+  private lastLevelAt = 0;
+  private lastNow = 0;
   private lookX = 0;
   private lookY = 0;
   private level = 0;
+  private mode: ExpressionState = 'idle';
 
   constructor(private opts: AmojiFaceOptions = {}) {}
 
   get current(): FaceParams {
     return this.cur;
+  }
+
+  /** The expression currently being eased toward. */
+  get state(): ExpressionState {
+    return this.mode;
   }
 
   /** Eyes glide toward a gaze point, −1..1 on both axes. Call with (0,0) to recenter. */
@@ -277,40 +866,67 @@ export class AmojiFace {
   /** Feed live voice amplitude (0..1) for lipsync; auto-decays if you stop feeding. */
   setVoiceLevel(v: number): void {
     this.level = clamp(v, 0, 1);
+    this.lastLevelAt = clock();
+  }
+
+  /** Drive a transient robot state or any catalog emotion by name. */
+  setExpression(state: string, intensity = 1, holdMs?: number): void {
+    const now = clock();
+    const name = resolveExpressionState(state);
+    this.mode = name;
+    this.expr.set(name, intensity, now);
+    this.holdUntil = now + (holdMs ?? this.opts.holdMs ?? 4000);
+    this.holding = true;
+    this.cur = this.expr.sample(now);
   }
 
   /** Drive the face straight from LLM emotion hints (dominant-blended). */
   showHints(hints: Partial<Record<EmotionId, number>>, holdMs?: number): void {
     if (!hints || Object.keys(hints).length === 0) return;
-    this.target = paramsForHints(hints);
-    this.holdUntil = performance.now() + (holdMs ?? this.opts.holdMs ?? 4000);
+    const now = clock();
+    const top = (Object.entries(hints) as Array<[string, number | undefined]>)
+      .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0];
+    this.mode = resolveExpressionState(top?.[0] ?? 'neutral');
+    this.expr.setLook(paramsForHints(hints), {
+      nowMs: now,
+      label: this.mode,
+      intensity: clamp01(top?.[1] ?? 0),
+    });
+    this.holdUntil = now + (holdMs ?? this.opts.holdMs ?? 4000);
+    this.holding = true;
+    this.cur = this.expr.sample(now);
   }
 
   start(): void {
     if (this.raf || typeof requestAnimationFrame === 'undefined') return;
     this.t0 = performance.now();
+    this.lastNow = this.t0;
     const loop = (now: number) => {
-      const t = (now - this.t0) / 1000;
-      if (now > this.holdUntil) this.target = { ...NEUTRAL };
-      const k = 0.12;
-      for (const key of ['eyeW', 'eyeH', 'pupil', 'smile', 'open', 'bounce'] as const) {
-        this.cur[key] += (this.target[key] - this.cur[key]) * k;
+      const dt = this.lastNow > 0 ? Math.min(250, Math.max(0, now - this.lastNow)) : 16;
+      this.lastNow = now;
+      if (this.holding && now > this.holdUntil) {
+        this.holding = false;
+        this.mode = 'idle';
+        this.expr.set('idle', 1, now);
       }
-      this.cur.r += (this.target.r - this.cur.r) * k;
-      this.cur.g += (this.target.g - this.cur.g) * k;
-      this.cur.b += (this.target.b - this.cur.b) * k;
-      // voice level decay — safe if the caller stops feeding samples
-      this.level *= 0.9;
+      this.cur = this.expr.sample(now);
+      // Voice level decays so a caller that stops feeding samples still closes.
+      this.level *= Math.exp(-dt / 180);
+      const speaking = now < this.speakingUntil;
+      const levelFresh = now - this.lastLevelAt < 250;
+      const fallback = speaking && !levelFresh ? fallbackMouthLevel(now) : 0;
+      const mouthTarget = this.level > 0.02 ? this.level : fallback;
+      this.mouthLevel = smoothMouthLevel(this.mouthLevel, mouthTarget, dt);
       // blink
-      this.nextBlink -= 1 / 60;
+      this.nextBlink -= dt / 1000;
       if (this.nextBlink <= 0) { this.blink = 1; this.nextBlink = 2 + Math.random() * 3; }
-      this.blink = Math.max(0, this.blink - 0.09);
+      this.blink = Math.max(0, this.blink - dt / 110);
       const canvas = this.opts.canvas;
       if (canvas) {
         const ctx = canvas.getContext('2d');
-        if (ctx) drawFace(ctx, canvas.width, canvas.height, this.cur, t, this.blink * this.blink, this.lookX, this.lookY, this.level);
+        if (ctx) drawFace(ctx, canvas.width, canvas.height, this.cur, now / 1000, this.blink * this.blink, this.lookX, this.lookY, this.mouthLevel);
       }
-      this.opts.driver?.showFrame?.(ledFrame(this.cur, t, this.opts.ledSize ?? LED_SIZE, this.lookX, this.lookY, this.level), this.opts.ledSize ?? LED_SIZE);
+      this.opts.driver?.showFrame?.(ledFrame(this.cur, now / 1000, this.opts.ledSize ?? LED_SIZE, this.lookX, this.lookY, this.mouthLevel), this.opts.ledSize ?? LED_SIZE);
       this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
@@ -319,18 +935,30 @@ export class AmojiFace {
   stop(): void {
     if (typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(this.raf);
     this.raf = 0;
+    this.lastNow = 0;
   }
 
   /** Analyze text, show the matching expression, and (optionally) speak it. */
   say(text: string): void {
-    this.target = paramsForText(text);
-    this.holdUntil = performance.now() + (this.opts.holdMs ?? 4000);
+    const now = clock();
+    const hints = analyzeText(text);
+    const top = (Object.entries(hints) as Array<[string, number | undefined]>)
+      .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0];
+    this.mode = resolveExpressionState(top?.[0] ?? 'speaking');
+    this.expr.setLook(paramsForHints(hints), {
+      nowMs: now,
+      label: this.mode,
+      intensity: clamp01(top?.[1] ?? 0.5),
+    });
+    this.holdUntil = now + (this.opts.holdMs ?? 4000);
+    this.holding = true;
+    this.speakingUntil = this.holdUntil;
+    this.cur = this.expr.sample(now);
     this.opts.driver?.speak?.(text);
   }
 
   /** Directly drive an emotion: 'joy' | 'sadness' | 'anger' | ... */
   setEmotion(emotion: string, intensity = 1): void {
-    this.target = paramsForHints({ [emotion]: intensity } as Partial<Record<EmotionId, number>>);
-    this.holdUntil = performance.now() + (this.opts.holdMs ?? 4000);
+    this.setExpression(emotion, intensity);
   }
 }
