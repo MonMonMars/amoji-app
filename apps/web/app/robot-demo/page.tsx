@@ -2,9 +2,11 @@
 // Live demo of the Amoji Robot Face engine (the B2B product).
 // Open /robot-demo, type anything — the face shows the matching emotion.
 import { useEffect, useRef, useState } from 'react';
-import { AmojiFace, ledFrame, LED_SIZE } from '../../lib/robot-face';
+import { AmojiFace, EMOTION_IDS, ledFrame, LED_SIZE, TRANSIENT_FACE_STATES } from '../../lib/robot-face';
 
-const EMOTION_BUTTONS = ['joy', 'love', 'excitement', 'surprise', 'confusion', 'sadness', 'anger', 'fear'];
+// Every catalog emotion has a first-class look in the 2D engine — show them all.
+const EMOTION_BUTTONS = EMOTION_IDS;
+const ROBOT_STATES = TRANSIENT_FACE_STATES;
 
 const SNIPPET = `import { AmojiFace, HttpDriver } from '@amoji/robot-face';
 
@@ -27,6 +29,7 @@ export default function RobotDemoPage() {
   const faceRef = useRef<AmojiFace | null>(null);
   const [text, setText] = useState('');
   const [emotion, setEmotion] = useState<string | null>(null);
+  const [robotState, setRobotState] = useState<string | null>(null);
 
   useEffect(() => {
     const face = new AmojiFace({ canvas: canvasRef.current, holdMs: 4000 });
@@ -89,6 +92,7 @@ export default function RobotDemoPage() {
             onClick={() => {
               faceRef.current?.setEmotion(e, 1);
               setEmotion(e);
+              setRobotState(null);
             }}
             key={e}
             aria-label={e}
@@ -98,6 +102,27 @@ export default function RobotDemoPage() {
             }`}
           >
             {e}
+          </button>
+        ))}
+      </div>
+
+      <div role="group" aria-label="Robot states" className="flex w-full max-w-sm flex-wrap justify-center gap-2">
+        {ROBOT_STATES.map((s) => (
+          <button
+            type="button"
+            onClick={() => {
+              faceRef.current?.setExpression(s, 1);
+              setRobotState(s);
+              setEmotion(null);
+            }}
+            key={s}
+            aria-label={s}
+            aria-pressed={robotState === s}
+            className={`rounded-full border px-3 py-1.5 text-xs capitalize hover:bg-white/15 ${
+              robotState === s ? 'border-emerald-300/60 bg-emerald-300/20' : 'border-white/10 bg-white/5'
+            }`}
+          >
+            {s}
           </button>
         ))}
       </div>

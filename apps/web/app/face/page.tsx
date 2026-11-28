@@ -75,6 +75,10 @@ export default function FacePage() {
 
   const emit = (m: Mode) => {
     setMode(m);
+    // Transient robot states get their own 2D look; `speaking` is left to
+    // say()/showHints() so the spoken emotion keeps the face.
+    if (m === 'listening' || m === 'thinking') faceRef.current?.setExpression(m, 1, 30_000);
+    else if (m === 'idle') faceRef.current?.setExpression('idle', 1);
     try { window.parent?.postMessage({ type: 'amoji:state', mode: m }, '*'); } catch { /* cross-origin safe */ }
   };
 

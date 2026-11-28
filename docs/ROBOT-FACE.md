@@ -88,9 +88,16 @@ matrix at your frame rate.
 
 ## Emotion ids
 
-`joy excitement love contentment pride surprise confusion sadness anger fear`
-plus `neutral` — and the wider app set (`relief shame guilt boredom contempt`
-`disgust embarrassment jealousy`) maps onto the nearest face blend.
+All 19 catalog emotions have a first-class 2D look (eye shape/slant, lid,
+pupil offset/dilation, brow tilt/raise/asymmetry, mouth curve/open/pucker,
+blush and a colour pair):
+
+`joy sadness anger fear disgust surprise neutral love embarrassment pride shame
+excitement contentment boredom confusion jealousy guilt relief contempt`
+
+Plus the transient robot states `idle listening thinking speaking sleeping
+greeting`. Unknown names fall back to neutral; a future catalog emotion fails
+the type check / mapping test instead of silently looking neutral.
 
 ## What runs where
 

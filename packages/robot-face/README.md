@@ -43,11 +43,13 @@ const face = new AmojiFace({
 
 ## Emotions
 
-`joy · excitement · love · contentment · pride · surprise · confusion · sadness · anger · fear`
+All 19 catalog emotions: `joy · sadness · anger · fear · disgust · surprise · neutral · love · embarrassment · pride · shame · excitement · contentment · boredom · confusion · jealousy · guilt · relief · contempt`
 
 - `face.say(text)` — built-in multilingual analyzer (Cantonese/中文/English keywords) picks the expression; hook `speak` for TTS.
 - `face.setEmotion(emotion, intensity)` — direct control from your autonomy stack.
-- Expressions ease in, hold (`holdMs`, default 4000), then ease back to a breathing neutral idle with blinks.
+- `face.setExpression('listening' | 'thinking' | 'sleeping' | 'greeting' | …)` — transient robot states.
+- Each state draws its own eyes, lids, pupils, brows, mouth, blush and colour pair. State changes cross-fade in 160 ms; strong emotions punch past the target and settle.
+- Expressions hold (`holdMs`, default 4000), then ease back to a breathing idle with blinks.
 
 ## Live demo
 
