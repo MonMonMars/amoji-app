@@ -87,6 +87,7 @@ import {
 } from './eyes';
 import { BlinkClock } from './blink';
 import { buildExpressionNameMap, isBlinkExpression, resolveExpressionName } from './expression-names';
+import type { ExpressionNameMap } from './expression-names';
 import type { CastEyeProfile } from './cast-eye-profile';
 import { applyCastFix, captureCastFix, type CastFixState } from './cast-pose';
 import { needsFullUpright } from '../cast-adjust';
@@ -208,7 +209,18 @@ export interface Avatar {
    * the dominance path so caps and blending agree with `setExpression`.
    */
   readonly eyeProfile: CastEyeProfile;
+  /**
+   * The rig's real expression keys (authored spelling). The canvas uses it to
+   * decide which extra ARKit channels this rig can address independently.
+   */
+  readonly expressionNames: ExpressionNameMap;
   setExpression(name: string, value: number): void;
+  /**
+   * Hold the lids open while a strong surprise is on the face, so the wide-eye
+   * read is not cut short by an idle blink. Idempotent; cleared the next frame
+   * surprise falls away.
+   */
+  setBlinkSuppressed(on: boolean): void;
   applyPose(pose: AvatarPose): void;
   /** r103: re-apply the calibrated relaxed-hand curl (idempotent base·delta) */
   applyRelaxedHands(fullIdle?: boolean): void;
@@ -285,6 +297,8 @@ const EXPRESSION_ALIAS: Record<string, string> = {
   happy: 'joy', angry: 'angry', sad: 'sorrow', surprised: 'surprised',
   fun: 'fun', relaxed: '',
   aa: 'a', ih: 'i', ou: 'u', ee: 'e', oh: 'o',
+  // independent ARKit-style channels authored under their ARKit spelling
+  nosewrinkle: 'nosesneer', lippress: 'mouthpress', cheekraise: 'cheeksquint',
 };
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -808,7 +822,8 @@ class V1Avatar implements Avatar {
   readonly eyeProfile: CastEyeProfile;
   private vrm: VRM;
   /** lowercase actual expression name → authored key (`surprised`→`Surprised`) */
-  private readonly expressionNames: Map<string, string>;
+  readonly expressionNames: Map<string, string>;
+  private blinkSuppressed = false;
   /**
    * The idle blink owns the lids now. `externalBlink` is set when the canvas
    * wrote a non-zero lid weight earlier this frame (game view / scripted
@@ -896,6 +911,13 @@ class V1Avatar implements Avatar {
     // A scripted/game lid weight this frame means the blink clock must yield.
     if (value > 0 && isBlinkExpression(resolved)) this.externalBlink = true;
     em.setValue(resolved, capEyeExpression(resolved, value, this.eyeProfile));
+  }
+
+  setBlinkSuppressed(on: boolean): void {
+    if (this.blinkSuppressed === on) return;
+    this.blinkSuppressed = on;
+    // A fresh delay on release, so a blink does not fire the instant surprise ends.
+    if (on) this.blink.reset();
   }
 
   applyPose(raw: AvatarPose): void {
@@ -1118,6 +1140,18 @@ class V1Avatar implements Avatar {
   private updateBlink(dt: number): void {
     const em = this.vrm.expressionManager;
     if (!em) return;
+    // Surprised face: hold the lids open so the wide-eye read is not cut short
+    // by an idle blink. Cleared the frame the surprise drops.
+    if (this.blinkSuppressed) {
+      const full = resolveExpressionName(this.expressionNames, 'blink');
+      if (full) em.setValue(full, 0);
+      for (const split of ['blinkLeft', 'blinkRight'] as const) {
+        const key = resolveExpressionName(this.expressionNames, split);
+        if (key && key !== full) em.setValue(key, 0);
+      }
+      this.blink.reset();
+      return;
+    }
     if (this.externalBlink) {
       // Scripted blink won this frame — do not stack, and re-arm so the next
       // idle blink does not land immediately after it.
@@ -1165,6 +1199,9 @@ class GenericAvatar implements Avatar {
    * makes the expressive roster profile safe: no UV-cell flicker is possible.
    */
   readonly eyeProfile: CastEyeProfile = 'roster';
+  /** authored expression keys, lowercased — used to resolve extra channels */
+  readonly expressionNames: ExpressionNameMap;
+  private blinkSuppressed = false;
   /** the calibrated inner model node (facing yaw lives here, never on root) */
   private inner: THREE.Object3D;
   private bones = new Map<BoneName, THREE.Object3D>();
@@ -1196,6 +1233,7 @@ class GenericAvatar implements Avatar {
     const json = (gltf.parser as unknown as { json: Record<string, unknown> }).json;
     this.resolveBones(gltf, json);
     this.resolveExpressions(gltf, json);
+    this.expressionNames = buildExpressionNameMap(this.expressions.keys());
     this.calibrate();
     // r103: relaxed-hand calibration AFTER arm calibration — the fold-test
     // measures world distances, so the arms must be in their final rest pose
@@ -1361,6 +1399,12 @@ class GenericAvatar implements Avatar {
     for (const b of binds) b.mesh.morphTargetInfluences![b.index] = v;
   }
 
+  setBlinkSuppressed(on: boolean): void {
+    if (this.blinkSuppressed === on) return;
+    this.blinkSuppressed = on;
+    if (on) this.blink.reset();
+  }
+
   applyPose(raw: AvatarPose): void {
     // r60: clamp to human anatomy before touching any bone (library clips
     // never come through here, so they keep full freedom).
@@ -1498,7 +1542,8 @@ class GenericAvatar implements Avatar {
   update(dt: number): void {
     // gentle periodic blink so legacy models feel alive — lids only (capped);
     // eye mesh scale is pinned after so blink morphs cannot resize the socket.
-    this.setExpression('blink', this.blink.update(dt));
+    // Suppressed while a strong surprise holds the eyes wide.
+    this.setExpression('blink', this.blinkSuppressed ? 0 : this.blink.update(dt));
     pinEyeRestScales(this.eyeScalePins);
   }
 }

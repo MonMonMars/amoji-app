@@ -1,7 +1,7 @@
 # Phone smoke (live Pages)
 
 **Live:** https://monmonmars.github.io/amoji-app/  
-**Tip on main:** `r2026-11-24.311` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
+**Tip on main:** `r2026-11-24.312` · https://monmonmars.github.io/amoji-app/revision.txt must match splash footer (tap amber **Refresh** if stale SW)  
 **Purpose:** Human-only checks after #419–#437 + #458 + #607–#610 + r271–r311. Agent Vitest / CI green on tip. **Merged ≠ Done.**  
 Owner: “getting worst” / “nothing fixed” — **do not mark R10–R13 Done** until this pass.
 
@@ -32,6 +32,18 @@ Owner: a time question toured the world (“Hong Kong … Tokyo … London … N
 - [ ] Does the browser's own geolocation popup appear **at most once** — not again on the next Time tap in the same tab, or after Skip?
 - [ ] Does the spoken time sound natural (「你而家大約夜晚十一點半。」 / “Where you are it's about half past eleven at night.”), not raw digits like “00 31”?
 - [ ] Report: `ROW: time-local DEVICE: <model>` + city-tour / digits / no-card / popup-twice / silent-on-skip / ok
+
+### 2. Face reads emotional, mouth follows the real voice (r2026-11-24.312)
+
+Presentation-only on the existing rig — no paid voice, no new vendor. **(a)** An `AnalyserNode` on the `<audio>` that is actually playing (Edge/proxy/OpenAI blob, premade clips) now drives the jaw and vowel through `lib/vocal-envelope.ts`, with attack/release smoothing. It is only tapped when the source is same-origin or a `blob:` URL: a cross-origin element (gTTS's `translate.google.com` URL) would go SILENT under a MediaElementSource, so it deliberately keeps the old text clock, exactly like `speechSynthesis` (OS voice). **(b)** A strong emotion punches to ~1.22× for ~120 ms then settles and holds (`lib/emotion-presentation.ts`), and surprise holds the lids open. **(c)** The frame-mapper can drive ARKit brow/lip/cheek morphs independently — but every shipped cast rig only carries the six emotion presets, so on the live roster this part is inert by design (sad/angry/surprised still differ through the presets).
+
+- [ ] Send a chat line: does the mouth follow the **voice** (speech peaks, lip shapes), or keep a fixed metronome rhythm regardless of what she says?
+- [ ] Pick a line with a natural pause mid-sentence: does the jaw **close** in the pause, then reopen, instead of flapping through it?
+- [ ] Ask something sad, then something that makes her angry, then a surprised reaction: do the three faces look **different from each other** at a glance?
+- [ ] Does the expression **read immediately** (a beat of emphasis when it lands), without looking twitchy or buggy?
+- [ ] Switch to the **OS voice** (device speech) and speak: does the mouth still move (the text-clock fallback), not freeze shut?
+- [ ] On a line that falls back (OS voice or the cross-origin gTTS tier): is the voice still **audible** (the analyser must never silence a line)?
+- [ ] Report: `ROW: face-voice DEVICE: <model>` + metronome / pause-open / same-face / twitchy / os-voice-frozen / silent-line / ok
 
 ## Priority now — the r305–r310 landing (owner reports of 2026-11-25/26)
 

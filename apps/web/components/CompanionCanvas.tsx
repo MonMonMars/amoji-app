@@ -89,6 +89,10 @@ import {
 } from '../lib/idle-stance-soften';
 import { chestPokeBounce, CHEST_BOUNCE_SEC, SOFT_CHEST_BOUNCE_SEC } from '../lib/vrm/chest-bounce';
 import { sampleSpeech } from '../lib/speech';
+import { createExpressionPresenter } from '../lib/emotion-presentation';
+import { resolveExtraChannels } from '../lib/vrm/expression-names';
+import type { ExtraFaceChannel } from '@amoji/vrm-renderer';
+import { EXTRA_FACE_CHANNELS } from '@amoji/vrm-renderer';
 import { createV1Avatar, createGenericAvatar } from '../lib/vrm/avatar';
 import { applyDominatedEyeExpressions, isEyeMaterial, stabilizeEyeMaterials } from '../lib/vrm/eyes';
 import {
@@ -564,6 +568,11 @@ export default function CompanionCanvas({
     for (const def of PROPS) buildProp(def);
 
     let avatar: Avatar | null = null;
+    // Extra (non-preset) expression channels this rig actually ships. Empty on
+    // every VRoid cast rig (six presets only) → the old six-preset fold.
+    let extraChannels: ReadonlySet<ExtraFaceChannel> = new Set();
+    // Onset punch + hold so a strong emotion reads at a glance.
+    const facePresenter = createExpressionPresenter();
     const blendNodes: THREE.Object3D[] = [];
     const blendNames: string[] = [];
     const blendFrom: THREE.Quaternion[] = [];
@@ -1329,6 +1338,7 @@ export default function CompanionCanvas({
 
     const mountAvatar = (a: Avatar) => {
       avatar = a;
+      extraChannels = resolveExtraChannels(a.expressionNames);
       // Opt-in rig readout for the owner / agents: ?bones=1 prints the
       // upper-arm hang direction per side. Used to prove the left arm is not
       // crossing the midline (r2026-11-24.310). Zero cost without the flag.
@@ -2070,7 +2080,7 @@ export default function CompanionCanvas({
 
       const frame = tickEngine(dt);
       const pose = mixerActive ? undefined : sampleIdlePoseFrom(frame.t, poseSeed, poseSubset);
-      const targets = mapFrameToVrm(frame, 1, pose);
+      const targets = mapFrameToVrm(frame, 1, pose, { extraChannels });
       // r2026-10-03.39: a dialogue-triggered movement performance (sing / jump
       // / kungfu / taichi / piano / jog), stamped on the same clock as `now`.
       const mv = activeMove(now);
@@ -2228,6 +2238,9 @@ export default function CompanionCanvas({
         // comes from the mounted rig: `atlas` keeps winner-take-all for
         // seed-san; `roster` allows a reduced secondary so brows and mouth can
         // come from different emotions. The avatar applies the matching caps.
+        // Wide-eyed surprise holds the lids open (the blink clock yields).
+        // Game view owns its own blink weights, so it is never suppressed.
+        avatar!.setBlinkSuppressed(!gameView && targets.blendShape.surprise >= 0.55);
         if (gameView) {
           const expr = gameView.expr;
           applyDominatedEyeExpressions(setEm, {
@@ -2241,19 +2254,31 @@ export default function CompanionCanvas({
             blinkRight: 0,
           }, avatar!.eyeProfile);
         } else {
+          // Onset punch: a strong emotion lands at ~1.2× and settles back to
+          // the engine's target, then holds — a face you notice at a glance.
+          const show = (name: string, weight: number) => facePresenter.present(name, weight, now);
           applyDominatedEyeExpressions(setEm, {
-            happy: clamp(v(Math.max(targets.blendShape.joy, targets.blendShape.fun)) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost + performBoost, 0, 1),
-            angry: v(targets.blendShape.angry) + (poke.face === 'angry' ? pokeBoost : 0),
-            sad: v(targets.blendShape.sorrow),
+            happy: clamp(v(show('happy', Math.max(targets.blendShape.joy, targets.blendShape.fun))) + (poke.face === 'happy' ? pokeBoost : 0) + laughBoost + performBoost, 0, 1),
+            angry: v(show('angry', targets.blendShape.angry)) + (poke.face === 'angry' ? pokeBoost : 0),
+            sad: v(show('sad', targets.blendShape.sorrow)),
             surprised: poke.face === 'surprised'
-              ? clamp(v(targets.blendShape.surprise) + pokeBoost, 0, 1)
-              : v(targets.blendShape.surprise),
-            relaxed: v(targets.blendShape.relaxed) + (poke.face === 'relaxed' ? pokeBoost : 0),
+              ? clamp(v(show('surprised', targets.blendShape.surprise)) + pokeBoost, 0, 1)
+              : v(show('surprised', targets.blendShape.surprise)),
+            relaxed: v(show('relaxed', targets.blendShape.relaxed)) + (poke.face === 'relaxed' ? pokeBoost : 0),
             // No blink keys here. The avatar's blink clock owns the lids
             // (V1Avatar.update / GenericAvatar.update). Writing 0 every frame
             // here used to fight that timer and would zero it again if both
             // existed; leaving the channel untouched lets the clock win.
           }, avatar!.eyeProfile);
+          // Independent brow / lip / cheek targets — only present on rigs that
+          // ship the morphs, never on the current VRoid cast.
+          if (targets.extra) {
+            for (const channel of EXTRA_FACE_CHANNELS) {
+              const w = targets.extra[channel];
+              if (w === undefined) continue;
+              setEm(channel, v(w));
+            }
+          }
         }
         if (sp) {
           // Jaw openness always follows amplitude (`aa`), with the vowel only

@@ -2,6 +2,16 @@
 // The clock starts from the text, then follows the real audio element so a
 // long sentence cannot die after the first syllable, and it closes when that
 // audio actually ends.
+//
+// Real audio wins when it can be analysed: an AnalyserNode on the element that
+// is actually playing feeds `feedSpeechLevel` (amplitude → jaw, spectrum →
+// vowel). Only same-origin / blob sources are tapped — a cross-origin element
+// (gTTS's translate.google.com URL) cannot be analysed without silencing it,
+// and speechSynthesis has no analysable stream at all, so those keep the
+// syllable clock below. That fallback is mandatory, not a leftover.
+import { createDefaultAudioContext } from './audio-output';
+import { readVocalFrame, smoothMouth } from './vocal-envelope';
+
 export type VisemeVowel = 'aa' | 'ih' | 'ou' | 'ee' | 'oh';
 export interface SpeechSample { mouth: number; vowel: VisemeVowel; duck: number }
 const VOWELS: VisemeVowel[] = ['aa', 'ou', 'ih', 'ee', 'oh', 'aa', 'ou'];
@@ -46,6 +56,133 @@ export function feedSpeechLevel(mouth: number, vowel: VisemeVowel = 'aa', holdMs
 /** Drop the live level. The syllable clock (if any) takes the mouth back. */
 export function clearSpeechLevel(): void {
   fed = null;
+}
+
+// ---------------------------------------------------------------------------
+// real-audio mouth (TTS): an AnalyserNode on the element that is playing
+// ---------------------------------------------------------------------------
+
+/** ~60 ms: tracks syllables, cheap enough for a phone. */
+const MOUTH_SAMPLE_MS = 60;
+/** A tap that never shows energy for this long is broken — fall back. */
+const MOUTH_DEAD_MS = 900;
+
+let mouthEl: HTMLMediaElement | null = null;
+let mouthTimer: ReturnType<typeof setInterval> | null = null;
+/** Elements already routed through one MediaElementSource (create-once). */
+const mouthWired = new WeakSet<object>();
+const mouthAnalysers = new WeakMap<object, AnalyserNode>();
+
+function stopMouthLoop(clear = true): void {
+  if (mouthTimer !== null) {
+    clearInterval(mouthTimer);
+    mouthTimer = null;
+  }
+  mouthEl = null;
+  if (clear) clearSpeechLevel();
+}
+
+/**
+ * Can this element's audio be tapped without going silent? A MediaElementSource
+ * on a CORS-cross-origin resource outputs silence (and takes the element's own
+ * output with it), so only same-origin, blob: and data: sources qualify.
+ */
+export function isAnalysableSpeechSource(src: string | undefined): boolean {
+  if (!src) return false;
+  if (src.startsWith('blob:') || src.startsWith('data:')) return true;
+  try {
+    if (typeof location === 'undefined') return false;
+    return new URL(src, location.href).origin === location.origin;
+  } catch {
+    return false;
+  }
+}
+
+function startMouthLoop(el: HTMLMediaElement, an: AnalyserNode | null): void {
+  stopMouthLoop();
+  if (!an) return;
+  mouthEl = el;
+  const timeData = new Float32Array(an.fftSize);
+  const freqData = new Uint8Array(Math.max(16, an.frequencyBinCount));
+  let level = 0;
+  let sawEnergy = false;
+  let silentMs = 0;
+  const onStop = () => { if (mouthEl === el) stopMouthLoop(); };
+  try {
+    el.addEventListener('pause', onStop);
+    el.addEventListener('ended', onStop);
+  } catch { /* non-DOM stub */ }
+  mouthTimer = setInterval(() => {
+    if (mouthEl !== el) return;
+    if (el.paused || el.ended) { stopMouthLoop(); return; }
+    const frame = readVocalFrame(an, timeData, freqData);
+    if (frame.mouth > 0.03) {
+      sawEnergy = true;
+      silentMs = 0;
+    } else {
+      silentMs += MOUTH_SAMPLE_MS;
+    }
+    // Never saw a real sample yet: the tap may be broken (suspended context,
+    // muted source) or the clip may simply open on silence. Hand the mouth
+    // back to the syllable clock but KEEP polling, so real audio takes over
+    // the moment a sample arrives.
+    if (!sawEnergy && silentMs >= MOUTH_DEAD_MS) { clearSpeechLevel(); return; }
+    level = smoothMouth(level, frame.mouth, MOUTH_SAMPLE_MS);
+    // A held level bridges the gap between reads (and the odd slow frame).
+    feedSpeechLevel(level, frame.vowel, MOUTH_SAMPLE_MS * 2 + 20);
+  }, MOUTH_SAMPLE_MS);
+}
+
+/**
+ * Drive the mouth from the audio that is actually playing. Safe on any element:
+ * a non-analysable source, a suspended AudioContext, or an element somebody
+ * already tapped all fall through to the syllable clock.
+ */
+export function startSpeechAnalyser(audio: LipAudioClock): void {
+  if (typeof window === 'undefined') return;
+  const el = audio as unknown as HTMLMediaElement;
+  if (!el || typeof el.src !== 'string' || !isAnalysableSpeechSource(el.src)) return;
+  const ctx = createDefaultAudioContext();
+  if (!ctx) return;
+
+  const existing = mouthAnalysers.get(el);
+  if (existing) { startMouthLoop(el, existing); return; }
+  if (mouthWired.has(el)) return;
+
+  const wire = () => {
+    if (mouthWired.has(el)) return;
+    if (el.paused || el.ended) return;
+    let media: MediaElementAudioSourceNode | null = null;
+    try {
+      // Create the analyser BEFORE the source: if the tap is unsupported we
+      // must not have already rerouted the element into a dead graph.
+      const an = ctx.createAnalyser();
+      an.fftSize = 256;
+      media = ctx.createMediaElementSource(el);
+      media.connect(an);
+      an.connect(ctx.destination);
+      mouthWired.add(el);
+      mouthAnalysers.set(el, an);
+      startMouthLoop(el, an);
+    } catch {
+      // The element is rerouted the moment the source exists; if anything
+      // below threw, reconnect it to the speakers so the line is not silent.
+      if (media) {
+        try { media.connect(ctx.destination); } catch { /* ignore */ }
+      }
+    }
+  };
+
+  if (ctx.state === 'running') { wire(); return; }
+  // Never tap while suspended — that would silence the line until it resumes.
+  try {
+    void ctx.resume().then(() => { if (ctx.state === 'running') wire(); }).catch(() => undefined);
+  } catch { /* gesture may still be required */ }
+}
+
+/** Stop feeding the mouth from audio (line ended / cut). */
+export function stopSpeechAnalyser(): void {
+  stopMouthLoop();
 }
 
 function growSyllables(): void {
@@ -124,14 +261,18 @@ export function followAudioElement(audio: LipAudioClock, last: boolean): void {
   const onEnd = () => {
     if (last) finishLipSync(id);
     else holdLipSync(id, 700);
+    stopSpeechAnalyser();
   };
   if (typeof audio.addEventListener === 'function') {
     for (const ev of ['loadedmetadata', 'durationchange', 'timeupdate', 'play']) {
       audio.addEventListener(ev, sync);
     }
+    // Re-tap on every play: a paused/resumed line keeps following its audio.
+    audio.addEventListener('play', () => startSpeechAnalyser(audio));
     audio.addEventListener('ended', onEnd);
-    audio.addEventListener('error', () => finishLipSync(id));
+    audio.addEventListener('error', () => { stopSpeechAnalyser(); finishLipSync(id); });
   }
+  startSpeechAnalyser(audio);
   sync();
 }
 
