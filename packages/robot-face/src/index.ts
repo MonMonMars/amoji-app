@@ -897,8 +897,9 @@ export interface AmojiFaceOptions {
   driver?: FaceDriver;
   ledSize?: number;
   holdMs?: number; // how long an expressed emotion holds before easing back
-  /** Idle gaze drift + blink on the clock; set false when an external gaze
-   *  tracker owns the eyes. Defaults to true. */
+  /** Clock-derived blink plus a subtle idle gaze drift. Set false when an
+   *  external gaze tracker owns the eyes — that suppresses the drift; the
+   *  blink stays on so the face still reads alive. Defaults to true. */
   idleMotion?: boolean;
 }
 
