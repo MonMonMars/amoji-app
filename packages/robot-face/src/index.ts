@@ -23,9 +23,11 @@
 //     thinking/speaking/sleeping/greeting) has its own drawable look: eye
 //     scale + slant, lid opening, pupil offset/dilation, brow tilt/raise/
 //     asymmetry, mouth curve/openness/pucker, blush, and a primary/secondary
-//     colour pair. Transitions cross-fade in 160 ms (120–200 ms window) and
-//     strong emotions punch in with the same envelope shape as the app's
-//     lib/emotion-presentation.ts. Nothing here touches the VRM path.
+//     colour pair. Colours are data: retune FACE_COLOR_PALETTE only. Transitions
+//     cross-fade in 160 ms (120–200 ms window) and strong emotions punch in
+//     with the same envelope shape as the app's lib/emotion-presentation.ts.
+//     Idle blink + gaze drift are clock-derived (no Math.random). Nothing here
+//     touches the VRM path.
 // ─────────────────────────────────────────────────────────────────────────────
 import { analyzeText, EMOTION_IDS } from '@amoji/emotion-core';
 import type { EmotionId } from '@amoji/emotion-core';
@@ -83,12 +85,62 @@ export type FaceLook = Required<FaceParams>;
 
 export type FaceRgb = readonly [number, number, number];
 
+export interface FaceColorPair {
+  primary: [number, number, number];
+  secondary: [number, number, number];
+}
+
+// ── the retuning surface ────────────────────────────────────────────────────
+// RETUNE THE FACE COLOURS HERE. This is the only record to edit for colour:
+// geometry, timing and rendering stay untouched. Every drawable state needs
+// one saturated primary (eyes / brows / mouth glow) and one lighter accent
+// (pupil core + blush), the two-tone Fluent-Emoji reading.
+//
+// The six coarse-mood anchors are copied from
+// apps/web/lib/emotion-orb-colors.ts `ORB_MOOD_RGB` — the package cannot
+// import app code, so apps/web/tests/robot-face-palette.test.ts fails if they
+// drift. The thirteen emotions the orb never had get a tint inside the nearest
+// family (love/embarrassment rose, fear/periwinkle violet, disgust/jealousy
+// green, shame/guilt indigo, boredom/contempt sand) rather than unrelated hex.
+export const FACE_COLOR_PALETTE: Record<ExpressionState, FaceColorPair> = {
+  // ── transient robot states ────────────────────────────────────────────────
+  neutral: { primary: [108, 198, 188], secondary: [255, 255, 255] },
+  idle: { primary: [120, 200, 205], secondary: [255, 255, 255] },
+  listening: { primary: [130, 210, 255], secondary: [210, 240, 255] },
+  thinking: { primary: [160, 170, 220], secondary: [225, 225, 255] },
+  speaking: { primary: [150, 225, 225], secondary: [255, 255, 255] },
+  sleeping: { primary: [70, 110, 160], secondary: [150, 180, 220] },
+  greeting: { primary: [255, 210, 110], secondary: [255, 245, 200] },
+
+  // ── catalog emotions ──────────────────────────────────────────────────────
+  joy: { primary: [255, 204, 58], secondary: [255, 240, 190] },
+  excitement: { primary: [255, 170, 60], secondary: [255, 230, 170] },
+  love: { primary: [255, 120, 170], secondary: [255, 190, 215] },
+  contentment: { primary: [98, 228, 148], secondary: [205, 245, 220] },
+  pride: { primary: [255, 210, 90], secondary: [255, 240, 180] },
+  surprise: { primary: [255, 158, 52], secondary: [255, 225, 175] },
+  confusion: { primary: [170, 170, 255], secondary: [225, 225, 255] },
+  sadness: { primary: [88, 148, 255], secondary: [190, 215, 255] },
+  anger: { primary: [255, 88, 82], secondary: [255, 180, 120] },
+  fear: { primary: [170, 120, 255], secondary: [220, 200, 255] },
+  disgust: { primary: [150, 190, 90], secondary: [220, 235, 180] },
+  embarrassment: { primary: [255, 150, 170], secondary: [255, 205, 215] },
+  shame: { primary: [130, 120, 200], secondary: [205, 195, 245] },
+  boredom: { primary: [110, 140, 160], secondary: [180, 200, 215] },
+  jealousy: { primary: [110, 180, 110], secondary: [200, 235, 190] },
+  guilt: { primary: [140, 130, 210], secondary: [210, 200, 245] },
+  relief: { primary: [130, 220, 190], secondary: [210, 245, 230] },
+  contempt: { primary: [200, 180, 120], secondary: [235, 225, 185] },
+};
+
+const neutralPair = FACE_COLOR_PALETTE.neutral;
+
 export const NEUTRAL: FaceLook = {
   eyeW: 1, eyeH: 0.8, eyeSlant: 0, pupil: 0.5, pupilX: 0, pupilY: 0,
   browTilt: 0, browRaise: 0, browAsym: 0,
   smile: 0.15, open: 0.1, pucker: 0, blush: 0,
-  r: 140, g: 220, b: 220,
-  r2: 255, g2: 255, b2: 255,
+  r: neutralPair.primary[0], g: neutralPair.primary[1], b: neutralPair.primary[2],
+  r2: neutralPair.secondary[0], g2: neutralPair.secondary[1], b2: neutralPair.secondary[2],
   bounce: 0.12,
 };
 
@@ -171,141 +223,102 @@ export function blendFaceParams(a: FaceParams, b: FaceParams, t: number): FaceLo
 }
 
 // ── the per-state look table ────────────────────────────────────────────────
-// Reused from the original 10-emotion palette: joy/excitement warm yellow,
-// love pink, contentment/relief green, pride gold, surprise/fear cool violet,
-// confusion periwinkle, sadness blue, anger red. The eight emotions that used
-// to fall through to neutral now get their own hue inside those families.
+// Shapes live here; colour comes from FACE_COLOR_PALETTE above so a designer
+// retunes one record without touching geometry. Every catalog emotion has a
+// row (the old table silently fell through to neutral for eight of them).
 
-const WHITE_CORE: FaceRgb = [255, 255, 255];
-
-const look = (over: Partial<FaceLook>, primary: FaceRgb, secondary: FaceRgb = WHITE_CORE): FaceLook =>
-  clampFaceLook({
+const look = (state: ExpressionState, over: Partial<FaceLook>): FaceLook => {
+  const { primary, secondary } = FACE_COLOR_PALETTE[state];
+  return clampFaceLook({
     ...NEUTRAL,
     ...over,
     r: primary[0], g: primary[1], b: primary[2],
     r2: secondary[0], g2: secondary[1], b2: secondary[2],
   });
+};
 
 export const FACE_STATES: Record<ExpressionState, FaceLook> = {
   neutral: NEUTRAL,
 
   // ── transient robot states ────────────────────────────────────────────────
-  idle: look(
-    { eyeH: 0.78, pupil: 0.45, smile: 0.1, bounce: 0.1 },
-    [120, 200, 205],
-  ),
-  listening: look(
-    { eyeH: 0.95, pupil: 0.7, pupilY: -0.1, browRaise: 0.25, smile: 0.2, open: 0.08, bounce: 0.08 },
-    [130, 210, 255], [210, 240, 255],
-  ),
-  thinking: look(
-    {
-      eyeH: 0.5, eyeSlant: 0.15, pupil: 0.6, pupilX: 0.55, pupilY: -0.35,
-      browTilt: 0.2, browAsym: 0.6, smile: -0.05, open: 0.06, bounce: 0.05,
-    },
-    [160, 170, 220], [225, 225, 255],
-  ),
-  speaking: look(
-    { eyeH: 0.85, pupil: 0.55, smile: 0.25, open: 0.2, bounce: 0.16 },
-    [150, 225, 225],
-  ),
-  sleeping: look(
-    { eyeH: 0.06, pupil: 0, smile: 0.05, open: 0.04, bounce: 0.02 },
-    [70, 110, 160], [150, 180, 220],
-  ),
-  greeting: look(
-    { eyeH: 1.05, smile: 0.8, open: 0.25, browRaise: 0.35, blush: 0.18, bounce: 0.5 },
-    [255, 210, 110], [255, 245, 200],
-  ),
+  idle: look('idle', { eyeH: 0.78, pupil: 0.45, smile: 0.1, bounce: 0.1 }),
+  listening: look('listening', {
+    eyeH: 0.95, pupil: 0.7, pupilY: -0.1, browRaise: 0.25, smile: 0.2, open: 0.08, bounce: 0.08,
+  }),
+  thinking: look('thinking', {
+    eyeH: 0.5, eyeSlant: 0.15, pupil: 0.6, pupilX: 0.55, pupilY: -0.35,
+    browTilt: 0.2, browAsym: 0.6, smile: -0.05, open: 0.06, bounce: 0.05,
+  }),
+  speaking: look('speaking', {
+    eyeH: 0.85, pupil: 0.55, smile: 0.25, open: 0.2, bounce: 0.16,
+  }),
+  sleeping: look('sleeping', {
+    eyeH: 0.06, pupil: 0, smile: 0.05, open: 0.04, bounce: 0.02,
+  }),
+  greeting: look('greeting', {
+    eyeH: 1.05, smile: 0.8, open: 0.25, browRaise: 0.35, blush: 0.18, bounce: 0.5,
+  }),
 
   // ── catalog emotions ──────────────────────────────────────────────────────
-  joy: look(
-    { eyeH: 1, smile: 1, open: 0.3, browRaise: 0.1, blush: 0.12, bounce: 0.4 },
-    [255, 200, 80], [255, 240, 190],
-  ),
-  excitement: look(
-    { eyeH: 1.1, smile: 1, open: 0.7, browRaise: 0.6, blush: 0.15, pupil: 0.8, bounce: 0.9 },
-    [255, 170, 60], [255, 230, 170],
-  ),
-  love: look(
-    { eyeH: 0.75, smile: 0.9, open: 0.2, browTilt: 0.25, blush: 0.55, pupil: 0.6, bounce: 0.3 },
-    [255, 120, 170], [255, 190, 215],
-  ),
-  contentment: look(
-    { eyeH: 0.7, smile: 0.6, open: 0.1, browTilt: 0.15, blush: 0.2, pupil: 0.45, bounce: 0.1 },
-    [120, 220, 160], [205, 245, 220],
-  ),
-  pride: look(
-    { eyeH: 0.85, smile: 0.8, open: 0.25, browRaise: 0.25, pupilY: -0.15, browTilt: -0.1, bounce: 0.5 },
-    [255, 210, 90], [255, 240, 180],
-  ),
-  surprise: look(
-    { eyeH: 1.2, smile: 0.2, open: 0.8, browRaise: 1, browTilt: 0.15, pupil: 0.75, bounce: 0.5 },
-    [120, 220, 255], [220, 245, 255],
-  ),
-  confusion: look(
-    { eyeH: 0.9, smile: -0.1, open: 0.2, browAsym: 1, browTilt: 0.25, pupilX: 0.4, pupilY: -0.25, bounce: 0.15 },
-    [170, 170, 255], [225, 225, 255],
-  ),
-  sadness: look(
-    { eyeH: 0.45, smile: -0.6, open: 0.1, browTilt: 0.85, pupilY: 0.25, bounce: 0 },
-    [90, 140, 255], [190, 215, 255],
-  ),
-  anger: look(
-    { eyeH: 0.5, smile: -0.9, open: 0.2, browTilt: -1, pupil: 0.35, blush: 0.05, bounce: 0.2 },
-    [255, 80, 70], [255, 180, 120],
-  ),
-  fear: look(
-    { eyeH: 1.15, smile: -0.3, open: 0.5, browTilt: 0.7, browRaise: 0.9, pupil: 0.8, pupilY: -0.1, bounce: 0.6 },
-    [170, 120, 255], [220, 200, 255],
-  ),
-  disgust: look(
-    { eyeH: 0.55, eyeSlant: -0.15, smile: -0.65, open: 0.08, browTilt: -0.35, browAsym: 0.35, pupil: 0.35, bounce: 0.05 },
-    [150, 190, 90], [220, 235, 180],
-  ),
-  embarrassment: look(
-    {
-      eyeH: 0.6, smile: 0.25, open: 0.12, browTilt: 0.45, browAsym: 0.2,
-      pupil: 0.55, pupilX: 0.35, pupilY: 0.25, blush: 0.8, bounce: 0.05,
-    },
-    [255, 150, 170], [255, 205, 215],
-  ),
-  shame: look(
-    {
-      eyeH: 0.35, smile: -0.35, open: 0.08, browTilt: 0.8, pupil: 0.4,
-      pupilX: -0.2, pupilY: 0.45, blush: 0.3, bounce: 0,
-    },
-    [130, 120, 200], [205, 195, 245],
-  ),
-  boredom: look(
-    {
-      eyeH: 0.3, eyeSlant: -0.1, smile: -0.15, open: 0.06, browTilt: 0.1,
-      pupil: 0.4, pupilX: 0.5, pupilY: 0.15, bounce: 0.02,
-    },
-    [110, 140, 160], [180, 200, 215],
-  ),
-  jealousy: look(
-    { eyeH: 0.45, smile: -0.4, open: 0.1, browTilt: -0.5, browAsym: 0.3, pupil: 0.45, blush: 0.1, bounce: 0.15 },
-    [110, 180, 110], [200, 235, 190],
-  ),
-  guilt: look(
-    {
-      eyeH: 0.5, smile: -0.3, open: 0.08, browTilt: 0.75, pupil: 0.45,
-      pupilX: -0.25, pupilY: 0.4, blush: 0.22, bounce: 0.02,
-    },
-    [140, 130, 210], [210, 200, 245],
-  ),
-  relief: look(
-    { eyeH: 0.5, smile: 0.5, open: 0.12, browTilt: 0.2, browRaise: 0.1, pupil: 0.45, blush: 0.1, bounce: 0.1 },
-    [130, 220, 190], [210, 245, 230],
-  ),
-  contempt: look(
-    {
-      eyeH: 0.55, eyeSlant: 0.2, smile: 0.3, open: 0.08, browTilt: -0.4,
-      browAsym: -0.7, pupil: 0.4, bounce: 0.08,
-    },
-    [200, 180, 120], [235, 225, 185],
-  ),
+  joy: look('joy', {
+    eyeH: 1, smile: 1, open: 0.3, browRaise: 0.1, blush: 0.12, bounce: 0.4,
+  }),
+  excitement: look('excitement', {
+    eyeH: 1.1, smile: 1, open: 0.7, browRaise: 0.6, blush: 0.15, pupil: 0.8, bounce: 0.9,
+  }),
+  love: look('love', {
+    eyeH: 0.75, smile: 0.9, open: 0.2, browTilt: 0.25, blush: 0.55, pupil: 0.6, bounce: 0.3,
+  }),
+  contentment: look('contentment', {
+    eyeH: 0.7, smile: 0.6, open: 0.1, browTilt: 0.15, blush: 0.2, pupil: 0.45, bounce: 0.1,
+  }),
+  pride: look('pride', {
+    eyeH: 0.85, smile: 0.8, open: 0.25, browRaise: 0.25, pupilY: -0.15, browTilt: -0.1, bounce: 0.5,
+  }),
+  surprise: look('surprise', {
+    eyeH: 1.2, smile: 0.2, open: 0.8, browRaise: 1, browTilt: 0.15, pupil: 0.75, bounce: 0.5,
+  }),
+  confusion: look('confusion', {
+    eyeH: 0.9, smile: -0.1, open: 0.2, browAsym: 1, browTilt: 0.25, pupilX: 0.4, pupilY: -0.25, bounce: 0.15,
+  }),
+  sadness: look('sadness', {
+    eyeH: 0.45, smile: -0.6, open: 0.1, browTilt: 0.85, pupilY: 0.25, bounce: 0,
+  }),
+  anger: look('anger', {
+    eyeH: 0.5, smile: -0.9, open: 0.2, browTilt: -1, pupil: 0.35, blush: 0.05, bounce: 0.2,
+  }),
+  fear: look('fear', {
+    eyeH: 1.15, smile: -0.3, open: 0.5, browTilt: 0.7, browRaise: 0.9, pupil: 0.8, pupilY: -0.1, bounce: 0.6,
+  }),
+  disgust: look('disgust', {
+    eyeH: 0.55, eyeSlant: -0.15, smile: -0.65, open: 0.08, browTilt: -0.35, browAsym: 0.35, pupil: 0.35, bounce: 0.05,
+  }),
+  embarrassment: look('embarrassment', {
+    eyeH: 0.6, smile: 0.25, open: 0.12, browTilt: 0.45, browAsym: 0.2,
+    pupil: 0.55, pupilX: 0.35, pupilY: 0.25, blush: 0.8, bounce: 0.05,
+  }),
+  shame: look('shame', {
+    eyeH: 0.35, smile: -0.35, open: 0.08, browTilt: 0.8, pupil: 0.4,
+    pupilX: -0.2, pupilY: 0.45, blush: 0.3, bounce: 0,
+  }),
+  boredom: look('boredom', {
+    eyeH: 0.3, eyeSlant: -0.1, smile: -0.15, open: 0.06, browTilt: 0.1,
+    pupil: 0.4, pupilX: 0.5, pupilY: 0.15, bounce: 0.02,
+  }),
+  jealousy: look('jealousy', {
+    eyeH: 0.45, smile: -0.4, open: 0.1, browTilt: -0.5, browAsym: 0.3, pupil: 0.45, blush: 0.1, bounce: 0.15,
+  }),
+  guilt: look('guilt', {
+    eyeH: 0.5, smile: -0.3, open: 0.08, browTilt: 0.75, pupil: 0.45,
+    pupilX: -0.25, pupilY: 0.4, blush: 0.22, bounce: 0.02,
+  }),
+  relief: look('relief', {
+    eyeH: 0.5, smile: 0.5, open: 0.12, browTilt: 0.2, browRaise: 0.1, pupil: 0.45, blush: 0.1, bounce: 0.1,
+  }),
+  contempt: look('contempt', {
+    eyeH: 0.55, eyeSlant: 0.2, smile: 0.3, open: 0.08, browTilt: -0.4,
+    browAsym: -0.7, pupil: 0.4, bounce: 0.08,
+  }),
 };
 
 export function isExpressionState(name: string): name is ExpressionState {
@@ -317,11 +330,6 @@ export function resolveExpressionState(name: string): ExpressionState {
   return isExpressionState(name) ? name : 'neutral';
 }
 
-export interface FaceColorPair {
-  primary: [number, number, number];
-  secondary: [number, number, number];
-}
-
 /** Colour pair for a state (0..255). Every catalog emotion resolves. */
 export function faceColorsFor(state: string): FaceColorPair {
   const s = resolveExpressionState(state);
@@ -329,6 +337,35 @@ export function faceColorsFor(state: string): FaceColorPair {
   return {
     primary: [roundRgb(p.r), roundRgb(p.g), roundRgb(p.b)],
     secondary: [roundRgb(p.r2), roundRgb(p.g2), roundRgb(p.b2)],
+  };
+}
+
+const colorChannel = (v: number, fallback: number): number =>
+  Number.isNaN(v) ? fallback : clamp(v, 0, 255);
+
+/**
+ * Clamped, NaN-safe linear mix of two colour pairs. `t` is clamped to 0..1
+ * (NaN → 0) and every channel is clamped back into 0..255, so a state change
+ * can never snap, overflow the gamut, or emit NaN.
+ */
+export function blendFaceColors(from: FaceColorPair, to: FaceColorPair, t: number): FaceColorPair {
+  const u = clamp01(Number.isFinite(t) ? t : 0);
+  const mix = (a: number, b: number): number => {
+    const av = colorChannel(a, 0);
+    const bv = colorChannel(b, 0);
+    return Math.round(clamp(av + (bv - av) * u, 0, 255));
+  };
+  return {
+    primary: [
+      mix(from.primary[0], to.primary[0]),
+      mix(from.primary[1], to.primary[1]),
+      mix(from.primary[2], to.primary[2]),
+    ],
+    secondary: [
+      mix(from.secondary[0], to.secondary[0]),
+      mix(from.secondary[1], to.secondary[1]),
+      mix(from.secondary[2], to.secondary[2]),
+    ],
   };
 }
 
@@ -396,6 +433,40 @@ export function blendProgress(elapsedMs: number, blendMs = STATE_BLEND_MS): numb
   const span = Math.max(1, Number.isFinite(blendMs) ? blendMs : STATE_BLEND_MS);
   const t = Number.isFinite(elapsedMs) ? clamp01(elapsedMs / span) : 0;
   return smoothstep(t);
+}
+
+// ── deterministic idle micro-motion ─────────────────────────────────────────
+// A 2D face reads as alive mostly through tiny continuous motion. The gentle
+// breathing bob already lives in drawFace (`sin(t * 2.2) * bounce`). These two
+// helpers add the motion that was missing or random: a clock-derived blink
+// schedule and a subtle idle gaze drift. No Math.random() anywhere — the same
+// `nowMs` always yields the same frame, so motion is testable and a recorded
+// robot demo replays identically.
+
+export const BLINK_PERIOD_MS = 3600;
+export const BLINK_DURATION_MS = 150;
+/** First blink lands ~2.1 s after load rather than mid-eye-open. */
+const BLINK_OFFSET_MS = 1450;
+
+/** 0 (open) → 1 (closed) → 0 blink amount for a clock-derived schedule. */
+export function idleBlinkAmount(nowMs: number): number {
+  const t = Number.isFinite(nowMs) ? nowMs : 0;
+  const phase = (((t + BLINK_OFFSET_MS) % BLINK_PERIOD_MS) + BLINK_PERIOD_MS) % BLINK_PERIOD_MS;
+  if (phase >= BLINK_DURATION_MS) return 0;
+  return Math.sin((phase / BLINK_DURATION_MS) * Math.PI);
+}
+
+export interface FaceGaze {
+  x: number;
+  y: number;
+}
+
+/** Subtle idle gaze drift, −0.16..0.16 per axis, deterministic from the clock. */
+export function idleGazeOffset(nowMs: number): FaceGaze {
+  const t = Number.isFinite(nowMs) ? nowMs / 1000 : 0;
+  const x = 0.09 * Math.sin(t * 0.37) + 0.045 * Math.sin(t * 0.91 + 1.7);
+  const y = 0.055 * Math.sin(t * 0.29 + 0.6) + 0.025 * Math.sin(t * 0.73 + 2.1);
+  return { x: clamp(x, -0.16, 0.16), y: clamp(y, -0.16, 0.16) };
 }
 
 /**
@@ -826,6 +897,9 @@ export interface AmojiFaceOptions {
   driver?: FaceDriver;
   ledSize?: number;
   holdMs?: number; // how long an expressed emotion holds before easing back
+  /** Idle gaze drift + blink on the clock; set false when an external gaze
+   *  tracker owns the eyes. Defaults to true. */
+  idleMotion?: boolean;
 }
 
 export class AmojiFace {
@@ -834,7 +908,6 @@ export class AmojiFace {
   private raf = 0;
   private t0 = 0;
   private blink = 0;
-  private nextBlink = 2.5;
   private holdUntil = 0;
   private holding = false;
   private speakingUntil = 0;
@@ -917,16 +990,23 @@ export class AmojiFace {
       const fallback = speaking && !levelFresh ? fallbackMouthLevel(now) : 0;
       const mouthTarget = this.level > 0.02 ? this.level : fallback;
       this.mouthLevel = smoothMouthLevel(this.mouthLevel, mouthTarget, dt);
-      // blink
-      this.nextBlink -= dt / 1000;
-      if (this.nextBlink <= 0) { this.blink = 1; this.nextBlink = 2 + Math.random() * 3; }
-      this.blink = Math.max(0, this.blink - dt / 110);
+      // Idle micro-motion is clock-derived (no Math.random): a blink schedule
+      // plus a subtle gaze drift while nothing else owns the eyes. An external
+      // gaze tracker (setLook) always wins, and can opt out entirely.
+      this.blink = idleBlinkAmount(now);
+      const drifting = this.opts.idleMotion !== false
+        && this.mode === 'idle'
+        && Math.abs(this.lookX) < 0.02
+        && Math.abs(this.lookY) < 0.02;
+      const drift = drifting ? idleGazeOffset(now) : null;
+      const gazeX = clamp(this.lookX + (drift?.x ?? 0), -1, 1);
+      const gazeY = clamp(this.lookY + (drift?.y ?? 0), -1, 1);
       const canvas = this.opts.canvas;
       if (canvas) {
         const ctx = canvas.getContext('2d');
-        if (ctx) drawFace(ctx, canvas.width, canvas.height, this.cur, now / 1000, this.blink * this.blink, this.lookX, this.lookY, this.mouthLevel);
+        if (ctx) drawFace(ctx, canvas.width, canvas.height, this.cur, now / 1000, this.blink, gazeX, gazeY, this.mouthLevel);
       }
-      this.opts.driver?.showFrame?.(ledFrame(this.cur, now / 1000, this.opts.ledSize ?? LED_SIZE, this.lookX, this.lookY, this.mouthLevel), this.opts.ledSize ?? LED_SIZE);
+      this.opts.driver?.showFrame?.(ledFrame(this.cur, now / 1000, this.opts.ledSize ?? LED_SIZE, gazeX, gazeY, this.mouthLevel), this.opts.ledSize ?? LED_SIZE);
       this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
