@@ -459,21 +459,41 @@ describe('music stream — curated keyless catalog is the default source', () =>
 
   it('rotates instead of always returning the first track', () => {
     const stream = createMusicStream({ env: {} });
-    const first = stream.curatedTracks()[0]!.id;
-    const seen = new Set<string>();
-    for (let i = 0; i < JAMENDO_CURATED_TRACKS.length; i++) {
-      const track = stream.nextCurated();
-      expect(track).not.toBeNull();
-      seen.add(track!.id);
-    }
-    // A full pass covers every track exactly once; it does not start at index 0
-    // every time (that is the whole point of the rotation).
-    expect(seen.size).toBe(JAMENDO_CURATED_TRACKS.length);
-    expect([...seen][0]).not.toBe(first);
+    const pass = (): string[] => {
+      const ids: string[] = [];
+      for (let i = 0; i < JAMENDO_CURATED_TRACKS.length; i++) {
+        const track = stream.nextCurated();
+        expect(track).not.toBeNull();
+        ids.push(track!.id);
+      }
+      return ids;
+    };
+
+    const firstPass = pass();
+    // A full pass covers every track exactly once.
+    expect(new Set(firstPass).size).toBe(JAMENDO_CURATED_TRACKS.length);
+    expect(firstPass.length).toBe(JAMENDO_CURATED_TRACKS.length);
+
+    // Rotation is a shuffled bag (upstream `refillRotation` uses Math.random),
+    // so a fresh pass may legitimately open on any track — including index 0
+    // of the catalog. Asserting "the first pick is never curatedTracks()[0]"
+    // therefore flaked ~1/N of runs. The invariant the code does guarantee is
+    // that a new pass never opens with the track that closed the previous one.
+    const secondPass = pass();
+    expect(new Set(secondPass).size).toBe(JAMENDO_CURATED_TRACKS.length);
+    expect(secondPass[0]).not.toBe(firstPass[firstPass.length - 1]);
 
     stream.resetRotation();
     const afterReset = stream.nextCurated();
     expect(afterReset).not.toBeNull();
+    // The reset bag still covers the whole catalog rather than replaying one id.
+    const afterResetPass = new Set<string>([afterReset!.id]);
+    for (let i = 1; i < JAMENDO_CURATED_TRACKS.length; i++) {
+      const track = stream.nextCurated();
+      expect(track).not.toBeNull();
+      afterResetPass.add(track!.id);
+    }
+    expect(afterResetPass.size).toBe(JAMENDO_CURATED_TRACKS.length);
   });
 
   it('never fabricates a title or artist when the provider omits them', () => {
